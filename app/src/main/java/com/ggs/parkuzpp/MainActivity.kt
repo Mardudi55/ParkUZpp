@@ -13,9 +13,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.ggs.parkuzpp.ui.theme.ParkUZTheme
 
+// 🔥 DODANE (Firebase)
+import com.google.firebase.firestore.FirebaseFirestore
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 🔥 DODANE (Firebase test)
+        val db = FirebaseFirestore.getInstance()
+
+        val data = hashMapOf(
+            "status" to "dziala"
+        )
+
+        db.collection("test")
+            .add(data)
+            .addOnSuccessListener {
+                println("FIREBASE OK")
+            }
+            .addOnFailureListener {
+                println("FIREBASE ERROR")
+            }
+
         enableEdgeToEdge()
         setContent {
             ParkUZTheme {
