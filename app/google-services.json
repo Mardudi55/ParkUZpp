@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "20305923809",
+    "project_id": "parkuz-a78b4",
+    "storage_bucket": "parkuz-a78b4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:20305923809:android:253cd403244050944af1a0",
+        "android_client_info": {
+          "package_name": "com.ggs.parkuzpp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA96CtTTjaQ9d_BbdJZmOZvQIEza-vaYAM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
