@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import androidx.navigation.fragment.NavHostFragment.Companion.findNavController
 import androidx.navigation.fragment.findNavController
 import com.ggs.parkuzpp.R
 
@@ -19,6 +20,9 @@ class MapFragment : Fragment(R.layout.fragment_map) {
 
         view.findViewById<Button>(R.id.btnAccount).setOnClickListener {
             findNavController().navigate(R.id.action_map_to_account)
+        }
+        view.findViewById<Button>(R.id.btnCamera).setOnClickListener {
+            findNavController().navigate(R.id.action_map_to_camera)
         }
     }
 }
