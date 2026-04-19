@@ -1,14 +1,15 @@
 package com.ggs.parkuzpp.main.camera
 
+import java.io.File
 import android.net.Uri
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import androidx.lifecycle.ViewModel
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.asSharedFlow
+import androidx.compose.runtime.mutableStateOf
+import kotlinx.coroutines.flow.MutableSharedFlow
 
 class CameraViewModel : ViewModel() {
 
@@ -30,6 +31,13 @@ class CameraViewModel : ViewModel() {
     }
 
     fun discardPhoto() {
+        lastCapturedUri?.path?.let { path ->
+            val file = File(path)
+            if (file.exists()) {
+                file.delete()
+            }
+        }
+
         lastCapturedUri = null
     }
 }
