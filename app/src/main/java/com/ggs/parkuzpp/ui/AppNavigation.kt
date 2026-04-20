@@ -1,28 +1,36 @@
 package com.ggs.parkuzpp.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.ggs.parkuzpp.main.camera.CameraController
-import com.ggs.parkuzpp.main.camera.CameraViewModel
+import com.ggs.parkuzpp.camera.CameraController
+import com.ggs.parkuzpp.camera.CameraViewModel
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    // NavHost zastępuje Twój FragmentContainerView
     NavHost(navController = navController, startDestination = "login") {
 
         composable("login") {
             LoginScreen(
                 onNavigateToMap = {
-                    // popUpTo czyści stos, żeby cofnięcie z mapy nie wracało do logowania
                     navController.navigate("map") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -50,27 +58,51 @@ fun AppNavigation() {
         }
 
         composable("history") {
-            // Zakładam, że stworzyłeś HistoryScreen na wzór AccountScreen
             HistoryScreen()
         }
 
         composable("camera") {
-            // Konfiguracja kamery w czystym Compose
             val context = LocalContext.current
             val lifecycleOwner = LocalLifecycleOwner.current
-            val viewModel: CameraViewModel = viewModel() // Compose automatycznie zarządza ViewModelem
 
-            // Inicjalizujemy kontroler i zapamiętujemy go, by nie tworzył się na nowo
-            val controller = remember {
-                CameraController(context, lifecycleOwner, PreviewView(context)).apply {
-                    startCamera() // Automatyczny start, jeśli uprawnienia są nadane
+            var hasCameraPermission by remember {
+                mutableStateOf(
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.CAMERA
+                    ) == PackageManager.PERMISSION_GRANTED
+                )
+            }
+
+            val permissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission(),
+                onResult = { isGranted ->
+                    hasCameraPermission = isGranted
+                }
+            )
+
+            LaunchedEffect(Unit) {
+                if (!hasCameraPermission) {
+                    permissionLauncher.launch(Manifest.permission.CAMERA)
                 }
             }
 
-            CameraScreen(
-                viewModel = viewModel,
-                controller = controller
-            )
+            if (hasCameraPermission) {
+                val viewModel: CameraViewModel = viewModel()
+
+                val controller = remember {
+                    CameraController(context, lifecycleOwner, PreviewView(context)).apply {
+                        startCamera()
+                    }
+                }
+
+                CameraScreen(
+                    viewModel = viewModel,
+                    controller = controller
+                )
+            } else {
+                Text(text = "Aby użyć aparatu, musisz zezwolić na dostęp do niego.")
+            }
         }
     }
 }

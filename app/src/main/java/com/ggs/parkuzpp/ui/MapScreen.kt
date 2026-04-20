@@ -19,9 +19,7 @@ fun MapScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         // --- Miejsce na Mapę ---
-        // Box z weight(1f) sprawia, że ten element zajmie całą wolną
-        // przestrzeń ekranu, jaka zostanie po wyrysowaniu dolnego menu.
-        Box(
+         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
@@ -34,12 +32,10 @@ fun MapScreen(
         }
 
         // --- Dolne Menu ---
-        // Odpowiednik Twojego poziomego LinearLayout.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp, top = 8.dp),
-            // Ustawia przyciski w równych odstępach na całej szerokości
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {

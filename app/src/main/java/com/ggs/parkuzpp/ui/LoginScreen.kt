@@ -18,29 +18,22 @@ import com.ggs.parkuzpp.auth.AuthRepository
 
 @Composable
 fun LoginScreen(
-    // Przekazujemy nawigację jako lambdy (funkcje) - to najlepsza praktyka w Compose,
-    // dzięki temu ekran jest niezależny od konkretnego systemu nawigacji.
     onNavigateToMap: () -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
-    // Pobieramy Context (odpowiednik requireContext() z Fragmentu)
     val context = LocalContext.current
 
-    // Inicjalizujemy repozytorium tylko raz i zapamiętujemy je
     val authRepository = remember { AuthRepository() }
 
-    // Stan pól tekstowych
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    // Stan przycisku i ładowania
     var isLoading by remember { mutableStateOf(false) }
 
-    // Zwykła kolumna układa elementy pionowo (odpowiednik Twojego ConstraintLayout w tym przypadku)
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp), // Zewnętrzny margines 24dp jak w XML
+            .padding(24.dp),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -53,7 +46,7 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(16.dp)) // Odstęp między polami
+        Spacer(modifier = Modifier.height(16.dp))
 
         // --- Pole Hasło ---
         OutlinedTextField(
@@ -78,9 +71,7 @@ fun LoginScreen(
                     return@Button
                 }
 
-                isLoading = true // Wyłącza przycisk
-
-                // AuthRepository wymaga Activity, więc bezpiecznie rzutujemy Context
+                isLoading = true
                 val activity = context as? Activity
                 if (activity != null) {
                     authRepository.login(
@@ -88,12 +79,13 @@ fun LoginScreen(
                         emailTrimmed,
                         passwordTrimmed
                     ) { success, error ->
-                        isLoading = false // Włącza przycisk z powrotem
+                        isLoading = false
 
                         if (success) {
-                            Toast.makeText(context, "Login OK", Toast.LENGTH_SHORT).show()
-                            onNavigateToMap() // Odpalenie nawigacji
+                            Toast.makeText(context, "Zalogowano", Toast.LENGTH_SHORT).show()
+                            onNavigateToMap()
                         } else {
+//                          TODO: przyjazny toast dla użytkownika pod koniec developmentu
                             Toast.makeText(
                                 context,
                                 "ERROR: ${error ?: "Nieznany błąd"}",
@@ -103,10 +95,11 @@ fun LoginScreen(
                     }
                 } else {
                     isLoading = false
+//                  TODO: przyjazny toast dla użytkownika pod koniec developmentu
                     Toast.makeText(context, "Błąd kontekstu aplikacji", Toast.LENGTH_SHORT).show()
                 }
             },
-            enabled = !isLoading, // Automatycznie reaguje na zmianę stanu isLoading
+            enabled = !isLoading,
             modifier = Modifier.fillMaxWidth()
         ) { Text("Zaloguj się") }
 
@@ -115,10 +108,10 @@ fun LoginScreen(
         // --- Przycisk / Tekst Rejestracji ---
         Text(
             text = "Zarejestruj się",
-            color = MaterialTheme.colorScheme.primary, // Używa koloru z Twojego Theme
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
-                .clickable { onNavigateToRegister() } // Odpalenie nawigacji
-                .padding(8.dp) // Zwiększa obszar kliknięcia
+                .clickable { onNavigateToRegister() }
+                .padding(8.dp)
         )
     }
 }

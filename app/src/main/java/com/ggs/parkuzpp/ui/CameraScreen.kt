@@ -12,25 +12,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.rememberAsyncImagePainter
-import com.ggs.parkuzpp.main.camera.CameraController
-import com.ggs.parkuzpp.main.camera.CameraViewModel
+import com.ggs.parkuzpp.camera.CameraController
+import com.ggs.parkuzpp.camera.CameraViewModel
 
 @Composable
 fun CameraScreen(
     viewModel: CameraViewModel,
     controller: CameraController
 ) {
-    // Zakładam, że lastCapturedUri to State<Uri?> (np. zadeklarowane jako mutableStateOf)
     val capturedUri = viewModel.lastCapturedUri
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Podgląd z kamery
         AndroidView(
             factory = { controller.previewView },
             modifier = Modifier.fillMaxSize()
         )
 
-        // Przycisk robienia zdjęcia
         Button(
             onClick = {
                 controller.takePhoto { uri ->
@@ -44,7 +41,6 @@ fun CameraScreen(
             Text("Zrób zdjęcie")
         }
 
-        // Dialog widoczny tylko wtedy, gdy zrobiono zdjęcie
         if (capturedUri != null) {
             AlertDialog(
                 onDismissRequest = { viewModel.discardPhoto() },

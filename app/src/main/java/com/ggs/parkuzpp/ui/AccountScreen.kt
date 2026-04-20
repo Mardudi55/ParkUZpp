@@ -10,7 +10,6 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun AccountScreen() {
-    // Box z wyśrodkowaniem działa idealnie jak Twój ConstraintLayout
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center

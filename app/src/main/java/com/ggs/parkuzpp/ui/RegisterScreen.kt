@@ -84,13 +84,11 @@ fun RegisterScreen(
                 val passTrimmed = password.trim()
                 val confirmPassTrimmed = confirmPassword.trim()
 
-                // Sprawdzanie, czy cokolwiek jest puste
                 if (emailTrimmed.isEmpty() || passTrimmed.isEmpty() || confirmPassTrimmed.isEmpty()) {
                     Toast.makeText(context, "Uzupełnij wszystkie dane", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
-                // Sprawdzanie, czy hasła są takie same
                 if (passTrimmed != confirmPassTrimmed) {
                     Toast.makeText(context, "Podane hasła nie są identyczne", Toast.LENGTH_SHORT).show()
                     return@Button
