@@ -8,6 +8,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
 
+
+
+// TODO: wyświetlenie informacji użytkownika, umożliwienie mu zmiany hasła i ustawień aplikacji
+// nie potrzeba osobnego okna do ustawień, bo nie mamy tyle do ustawiania
 @Composable
 fun AccountScreen() {
     Box(
