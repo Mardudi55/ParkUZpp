@@ -1,10 +1,27 @@
 package com.ggs.parkuzpp.main
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.ggs.parkuzpp.R
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.fragment.app.Fragment
+import com.ggs.parkuzpp.ui.AccountScreen
+import com.ggs.parkuzpp.ui.theme.ParkUZTheme
 
-class HistoryFragment : Fragment(R.layout.fragment_history)
+class HistoryFragment : Fragment() {
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View {
+        return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                ParkUZTheme {
+                    AccountScreen()
+                }
+            }
+        }
+    }
+}

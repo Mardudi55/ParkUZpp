@@ -9,9 +9,12 @@ import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import com.ggs.parkuzpp.ui.CameraScreen
+import com.ggs.parkuzpp.ui.theme.ParkUZTheme
 
 class CameraFragment : Fragment() {
     private val cameraPermissionLauncher =
@@ -19,9 +22,10 @@ class CameraFragment : Fragment() {
             if (granted) {
                 controller.startCamera()
             } else {
-                // możesz tu dać Toast albo wrócić
+                // TODO: Tutaj możesz dodać np. Toast z informacją o braku uprawnień
             }
         }
+
     private val viewModel: CameraViewModel by viewModels()
 
     private lateinit var previewView: PreviewView
@@ -32,27 +36,30 @@ class CameraFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
-        previewView = PreviewView(requireContext())
-
-        return ComposeView(requireContext()).apply {
-            setContent {
-                CameraScreen(
-                    viewModel = viewModel,
-                    controller = controller
-                )
-            }
-        }
+        return ComposeView(requireContext())
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        previewView = PreviewView(requireContext())
         controller = CameraController(
             requireContext(),
             viewLifecycleOwner,
             previewView
         )
+
+        (view as ComposeView).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                ParkUZTheme {
+                    CameraScreen(
+                        viewModel = viewModel,
+                        controller = controller
+                    )
+                }
+            }
+        }
 
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
