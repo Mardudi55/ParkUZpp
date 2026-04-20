@@ -41,6 +41,11 @@
             app:destination="@id/accountFragment"
             app:enterAnim="@android:anim/slide_in_left"
             app:exitAnim="@android:anim/slide_out_right"/>
+        <action
+            android:id="@+id/action_map_to_camera"
+            app:destination="@id/cameraFragment"
+            app:enterAnim="@android:anim/slide_in_left"
+            app:exitAnim="@android:anim/slide_out_right"/>
     </fragment>
 
     <fragment
@@ -54,4 +59,7 @@
     <fragment
         android:id="@+id/settingsFragment"
         android:name="com.ggs.parkuzpp.main.SettingsFragment"/>
+    <fragment
+        android:id="@+id/cameraFragment"
+        android:name="com.ggs.parkuzpp.main.camera.CameraFragment"/>
 </navigation>
