@@ -1,4 +1,4 @@
-package com.ggs.parkuzpp.main.camera
+package com.ggs.parkuzpp.camera
 
 import android.content.Context
 import android.net.Uri

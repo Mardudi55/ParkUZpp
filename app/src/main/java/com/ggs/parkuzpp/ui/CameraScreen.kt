@@ -1,8 +1,6 @@
-package com.ggs.parkuzpp.main.camera
-
+package com.ggs.parkuzpp.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -14,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.rememberAsyncImagePainter
+import com.ggs.parkuzpp.camera.CameraController
+import com.ggs.parkuzpp.camera.CameraViewModel
 
 @Composable
 fun CameraScreen(
@@ -22,8 +22,7 @@ fun CameraScreen(
 ) {
     val capturedUri = viewModel.lastCapturedUri
 
-    Box(modifier = Modifier.fillMaxSize())
-    {
+    Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
             factory = { controller.previewView },
             modifier = Modifier.fillMaxSize()
@@ -63,7 +62,7 @@ fun CameraScreen(
                 text = {
                     Image(
                         painter = rememberAsyncImagePainter(capturedUri),
-                        contentDescription = null,
+                        contentDescription = "Zrobione zdjęcie",
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
