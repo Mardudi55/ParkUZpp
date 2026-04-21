@@ -10,34 +10,32 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = ParkUZPrimaryOrange,
+    background = DarkAppBackground,
+    surface = DarkSurfaceCard,
+    onPrimary = Color.White, // White text on the orange primary button
+    onBackground = DarkTextPrimary, // White primary text on deep navy background
+    onSurface = DarkTextPrimary // White primary text on grey card surface
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = ParkUZPrimaryOrange,
+    background = LightAppBackground,
+    surface = LightSurfaceCard,
+    onPrimary = DarkTextPrimary, // Dark primary text on orange primary button (optional)
+    onBackground = LightTextPrimary, // Dark primary text on light grey background
+    onSurface = LightTextPrimary // Dark primary text on light card surface
 )
+
 
 @Composable
 fun ParkUZTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
