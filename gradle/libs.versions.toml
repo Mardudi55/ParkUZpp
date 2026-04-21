@@ -15,6 +15,11 @@ navigationCompose = "2.9.7"
 navigationFragmentKtx = "2.9.7"
 playServicesLocation = "21.3.0"
 guava = "33.6.0-android"
+robolectric = "4.16.1"
+kotlinxCoroutinesTest = "1.10.2"
+core = "1.7.0"
+mockitoCore = "5.23.0"
+mockitoKotlin = "6.3.0"
 
 [libraries]
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraxVersion" }
@@ -27,10 +32,8 @@ androidx-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx",
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 firebase-appcheck-playintegrity = { module = "com.google.firebase:firebase-appcheck-playintegrity" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
-firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
-firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -47,6 +50,11 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
+androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockitoCore" }
+mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
