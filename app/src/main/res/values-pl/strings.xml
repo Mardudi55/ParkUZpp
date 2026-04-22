@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="could_not_get_location">Nie udało się pobrać lokalizacji.</string>
+    <string name="no_location_yet">Nie pobrano jeszcze lokalizacji.</string>
+    <string name="save_parking_spot" >Zapisz miejsce parkowania</string>
+</resources>
