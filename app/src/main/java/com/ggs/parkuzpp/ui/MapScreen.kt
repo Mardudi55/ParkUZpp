@@ -10,16 +10,26 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
+import com.ggs.parkuzpp.location.UserTriggeredGPSService
 import com.ggs.parkuzpp.R
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,6 +38,15 @@ fun MapScreen(
     onNavigateToCamera: () -> Unit
 ) {
     val parkuzOrange = Color(0xFFFF5722)
+    
+    val noLocationText = stringResource(R.string.no_location_yet)
+    val couldNotGetLocationText = stringResource(R.string.could_not_get_location)
+    val saveSpotText = stringResource(R.string.save_parking_spot)
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val gps = remember { UserTriggeredGPSService(context) }
+    var coordinates by remember { mutableStateOf(noLocationText) }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -45,6 +64,23 @@ fun MapScreen(
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
+            Text(text = coordinates)
+            Button(onClick = {
+                scope.launch {
+                    try {
+                        val location = gps.getCurrentLocation()
+                        coordinates = if (location != null) {
+                        "Lat: ${location.latitude}, Lng: ${location.longitude}"
+                        } else {
+                            couldNotGetLocationText
+                        }
+                    } catch (_: SecurityException) {
+                        coordinates = couldNotGetLocationText
+                    }
+                }
+            }) {
+                Text(saveSpotText)
+            }
         }
 
         // --- 2. GÓRNY PASEK I WYSZUKIWARKA ---
