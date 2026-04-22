@@ -13,6 +13,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ggs.parkuzpp.auth.AuthRepository
+import com.ggs.parkuzpp.auth.AuthValidator
 
 @Composable
 fun RegisterScreen(
@@ -89,7 +90,7 @@ fun RegisterScreen(
                     return@Button
                 }
 
-                if (passTrimmed != confirmPassTrimmed) {
+                if (!AuthValidator.isRegisterValid(emailTrimmed, passTrimmed, confirmPassTrimmed)) {
                     Toast.makeText(context, "Podane hasła nie są identyczne", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
