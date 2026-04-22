@@ -8,13 +8,10 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,7 +26,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -37,16 +33,17 @@ import androidx.navigation.compose.rememberNavController
 import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.camera.CameraController
 import com.ggs.parkuzpp.camera.CameraViewModel
-import com.ggs.parkuzpp.ui.theme.ParkUZPrimaryOrange
 import kotlinx.coroutines.launch
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(isDarkTheme: Boolean, onThemeChange: (Boolean) -> Unit) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
             LoginScreen(
+                isDarkTheme = isDarkTheme,       // <-- DODANE: Przekazanie stanu motywu
+                onThemeChange = onThemeChange,   // <-- DODANE: Przekazanie funkcji zmiany motywu
                 onNavigateToMap = {
                     navController.navigate("main") {
                         popUpTo("login") { inclusive = true }
@@ -58,12 +55,16 @@ fun AppNavigation() {
 
         composable("register") {
             RegisterScreen(
+                isDarkTheme = isDarkTheme,
+                onThemeChange = onThemeChange,
                 onNavigateToLogin = { navController.popBackStack() }
             )
         }
 
         composable("main") {
             MainScreen(
+                isDarkTheme = isDarkTheme,
+                onThemeChange = onThemeChange,
                 onLogout = {
                     navController.navigate("login") {
                         popUpTo("main") { inclusive = true }
@@ -112,14 +113,21 @@ fun AppNavigation() {
                     controller = controller
                 )
             } else {
-                Text(text = "Aby użyć aparatu, musisz zezwolić na dostęp do niego.")
+                Text(
+                    text = "Aby użyć aparatu, musisz zezwolić na dostęp do niego.",
+                    color = MaterialTheme.colorScheme.onBackground
+                )
             }
         }
     }
 }
 
 @Composable
-fun MainScreen(onLogout: () -> Unit) {
+fun MainScreen(
+    isDarkTheme: Boolean,
+    onThemeChange: (Boolean) -> Unit,
+    onLogout: () -> Unit
+) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val bottomNavController = rememberNavController()
@@ -127,37 +135,42 @@ fun MainScreen(onLogout: () -> Unit) {
     val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
-                Spacer(Modifier.height(24.dp))
-                Text(
-                    text = "Menu",
-                    fontSize = 24.sp,
-                    color = ParkUZPrimaryOrange,
-                    modifier = Modifier.padding(16.dp)
-                )
-                HorizontalDivider()
-                NavigationDrawerItem(
-                    label = { Text("Mój Profil") },
-                    selected = false,
-                    icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
-                    onClick = { /* TODO: Otwórz profil */ }
-                )
-                NavigationDrawerItem(
-                    label = { Text("Wyloguj się") },
-                    selected = false,
-                    onClick = { onLogout() },
-                    modifier = Modifier.padding(bottom = 16.dp)
+            ModalDrawerSheet(
+                modifier = Modifier.width(320.dp),
+                drawerContainerColor = MaterialTheme.colorScheme.surface
+            ) {
+                AccountScreen(
+                    currentRoute = currentRoute,
+                    isDarkTheme = isDarkTheme,
+                    onThemeChange = onThemeChange,
+                    onNavigate = { route ->
+                        scope.launch { drawerState.close() }
+                        if (currentRoute != route) {
+                            bottomNavController.navigate(route) {
+                                popUpTo(bottomNavController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    },
+                    onLogout = {
+                        scope.launch { drawerState.close() }
+                        onLogout()
+                    }
                 )
             }
         }
     ) {
         Scaffold(
+            topBar = {
+                CustomTopAppBar(
+                    onOpenMenu = { scope.launch { drawerState.open() } }
+                )
+            },
             bottomBar = {
-                // UŻYWAMY NASZEGO CUSTOMOWEGO PASKA DOLNEGO
                 CustomBottomNavBar(
                     currentRoute = currentRoute,
                     onNavigate = { route ->
@@ -194,19 +207,50 @@ fun MainScreen(onLogout: () -> Unit) {
 }
 
 // =========================================
-// CUSTOMOWE KOMPONENTY PASKA DOLNEGO
+// CUSTOMOWE KOMPONENTY PASEK GÓRNY I DOLNY
 // =========================================
+
+@Composable
+fun CustomTopAppBar(onOpenMenu: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .statusBarsPadding(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        IconButton(onClick = onOpenMenu) {
+            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.primary)
+        }
+
+        Text(
+            text = "ParkUZ",
+            color = MaterialTheme.colorScheme.primary,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Icon(
+            painter = painterResource(id = R.drawable.ic_logo_withoutbg),
+            contentDescription = "ParkUZ Logo",
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape),
+            tint = Color.Unspecified
+        )
+    }
+}
 
 @Composable
 fun CustomBottomNavBar(
     currentRoute: String?,
     onNavigate: (String) -> Unit
 ) {
-    val parkuzOrange = Color(0xFFFF5722)
-
     Surface(
-        color = Color.White,
-        shadowElevation = 16.dp,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 8.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -218,17 +262,15 @@ fun CustomBottomNavBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             CustomNavItem(
-                text = "Mapa",
+                text = "Map",
                 icon = Icons.Default.Map,
                 isSelected = currentRoute == "map",
-                activeColor = parkuzOrange,
                 onClick = { onNavigate("map") }
             )
             CustomNavItem(
-                text = "Historia",
+                text = "History",
                 icon = Icons.Default.History,
                 isSelected = currentRoute == "history",
-                activeColor = parkuzOrange,
                 onClick = { onNavigate("history") }
             )
         }
@@ -240,18 +282,17 @@ fun CustomNavItem(
     text: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
-    activeColor: Color,
     onClick: () -> Unit
 ) {
-    val bgColor = if (isSelected) activeColor else Color.Transparent
-    val contentColor = if (isSelected) Color.White else Color.Gray
+    val bgColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
 
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(24.dp))
             .background(bgColor)
             .clickable(onClick = onClick)
-            .padding(horizontal = 36.dp, vertical = 8.dp), // Zapewnia szeroki, pomarańczowy "kafelek"
+            .padding(horizontal = 36.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

@@ -27,12 +27,11 @@ fun MapScreen(
     onOpenMenu: () -> Unit,
     onNavigateToCamera: () -> Unit
 ) {
-    val parkuzOrange = Color(0xFFFF5722)
-
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
         // --- 1. TŁO MAPY (Placeholder) ---
+        // Zostaje sztywne, bo to tylko zaślepka na prawdziwą mapę
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -53,57 +52,37 @@ fun MapScreen(
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .statusBarsPadding(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                IconButton(onClick = onOpenMenu) {
-                    Icon(Icons.Default.Menu, contentDescription = "Menu", tint = parkuzOrange)
-                }
-
-                Text(
-                    text = "ParkUZ",
-                    color = parkuzOrange,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_logo),
-                    contentDescription = "ParkUZ Logo",
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape),
-                    tint = Color.Unspecified
-                )
-            }
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
                     .shadow(4.dp, RoundedCornerShape(24.dp))
-                    .background(Color.White, RoundedCornerShape(24.dp))
+                    // Zmiana Color.White na dynamiczny surface z motywu
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Search, contentDescription = "Szukaj", tint = Color.Gray)
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = "Szukaj",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant // Zmiana z Color.Gray
+                    )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = "Dokąd zmierzasz?",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, // Zmiana z Color.Gray
                         fontSize = 16.sp,
                         modifier = Modifier.weight(1f)
                     )
-                    Icon(Icons.Default.Mic, contentDescription = "Mikrofon", tint = parkuzOrange)
+                    Icon(
+                        Icons.Default.Mic,
+                        contentDescription = "Mikrofon",
+                        tint = MaterialTheme.colorScheme.primary // Zmiana z parkuzOrange
+                    )
                 }
             }
         }
@@ -119,7 +98,7 @@ fun MapScreen(
             Surface(
                 onClick = onNavigateToCamera,
                 shape = RoundedCornerShape(16.dp),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface, // Zmiana z Color.White
                 shadowElevation = 4.dp,
                 modifier = Modifier.padding(bottom = 12.dp)
             ) {
@@ -129,14 +108,14 @@ fun MapScreen(
                 ) {
                     Text(
                         text = "+",
-                        color = parkuzOrange,
+                        color = MaterialTheme.colorScheme.primary, // Zmiana z parkuzOrange
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Dodaj lokalizację",
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface, // Zmiana z Color.Black
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp
                     )
@@ -146,7 +125,9 @@ fun MapScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface // Zmiana z Color.White
+                ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
                 Column(
@@ -161,11 +142,11 @@ fun MapScreen(
                             text = "Parking A1 - Centrum",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
-                            color = Color.Black
+                            color = MaterialTheme.colorScheme.onSurface // Zmiana z Color.Black
                         )
                         Text(
                             text = "85%",
-                            color = Color(0xFF4CAF50),
+                            color = Color(0xFF4CAF50), // Zostawiamy zielony na sztywno
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
@@ -175,7 +156,7 @@ fun MapScreen(
 
                     Text(
                         text = "ul. Podgórna 50, Zielona Góra",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, // Zmiana z Color.Gray
                         fontSize = 13.sp
                     )
 
@@ -187,13 +168,15 @@ fun MapScreen(
                             .fillMaxWidth()
                             .height(52.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = parkuzOrange)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary // Zmiana z parkuzOrange
+                        )
                     ) {
                         Text(
                             text = "P  Parkuj tutaj",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = Color.White // Zostawiamy biały na pomarańczowym guziku
                         )
                     }
                 }

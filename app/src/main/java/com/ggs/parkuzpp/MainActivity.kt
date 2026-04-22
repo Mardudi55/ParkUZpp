@@ -7,6 +7,7 @@ import com.ggs.parkuzpp.ui.AppNavigation
 import com.ggs.parkuzpp.ui.theme.ParkUZTheme
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.runtime.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,9 +26,17 @@ class MainActivity : ComponentActivity() {
             }
 
         setContent {
-            ParkUZTheme {
-                AppNavigation()
+            // 1. Zmienna trzymająca stan motywu (żyje na samej górze apki)
+            var isDarkTheme by remember { mutableStateOf(false) }
+
+            // 2. Przekazujemy stan do globalnego motywu
+            ParkUZTheme(darkTheme = isDarkTheme) {
+                // 3. Przekazujemy stan i funkcję zmieniającą do nawigacji!
+                AppNavigation(
+                    isDarkTheme = isDarkTheme,
+                    onThemeChange = { isDarkTheme = it }
+                )
             }
         }
+        }
     }
-}
