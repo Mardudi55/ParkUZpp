@@ -1,6 +1,7 @@
 package com.ggs.parkuzpp.ui
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -12,6 +13,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.auth.AuthRepository
 import com.ggs.parkuzpp.auth.AuthValidator
 
@@ -22,28 +24,39 @@ fun RegisterScreen(
     val context = LocalContext.current
     val authRepository = remember { AuthRepository() }
 
-    // Stany pól tekstowych
+    // 🔥 POLA
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") } // Nowe pole powtórz hasło
+    var confirmPassword by remember { mutableStateOf("") }
 
     var isLoading by remember { mutableStateOf(false) }
+
+    // 🔥 CAPTCHA
+    var selectedImages by remember { mutableStateOf(setOf<Int>()) }
+
+    val correctImages = setOf(
+        R.drawable.tree1,
+        R.drawable.tree2,
+        R.drawable.tree3
+    )
+
+    var isCaptchaChecked by remember { mutableStateOf(false) }
+    var showCaptchaDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
         verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start // Wyrównanie do lewej, tak jak w Twoim XML
+        horizontalAlignment = Alignment.Start
     ) {
-        // --- Tytuł ---
+
         Text(
             text = "Rejestracja",
             fontSize = 24.sp,
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        // --- Pole Email ---
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -54,7 +67,6 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- Pole Hasło ---
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -66,7 +78,6 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- Pole Powtórz Hasło ---
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
@@ -78,7 +89,24 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- Przycisk Rejestracji ---
+        // 🔥 CHECKBOX CAPTCHA
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showCaptchaDialog = true }
+                .padding(8.dp)
+        ) {
+            Checkbox(
+                checked = isCaptchaChecked,
+                onCheckedChange = { showCaptchaDialog = true }
+            )
+            Text("Nie jestem robotem")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 🔥 BUTTON
         Button(
             onClick = {
                 val emailTrimmed = email.trim()
@@ -92,6 +120,12 @@ fun RegisterScreen(
 
                 if (!AuthValidator.isRegisterValid(emailTrimmed, passTrimmed, confirmPassTrimmed)) {
                     Toast.makeText(context, "Podane hasła nie są identyczne", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+
+                // 🔥 CAPTCHA CHECK
+                if (!isCaptchaChecked) {
+                    Toast.makeText(context, "Potwierdź captchę", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
@@ -116,12 +150,53 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- Przycisk Powrotu ---
         TextButton(
             onClick = onNavigateToLogin,
             modifier = Modifier.align(Alignment.Start)
         ) {
             Text("Powrót")
         }
+    }
+
+    // 🔥 CAPTCHA DIALOG
+    if (showCaptchaDialog) {
+        AlertDialog(
+            onDismissRequest = { showCaptchaDialog = false },
+            confirmButton = {},
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+                    Text("Zaznacz wszystkie obrazy zawierające drzewa")
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    CaptchaGrid(
+                        selected = selectedImages,
+                        onToggle = { img ->
+                            selectedImages = if (selectedImages.contains(img)) {
+                                selectedImages - img
+                            } else {
+                                selectedImages + img
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            if (selectedImages == correctImages) {
+                                isCaptchaChecked = true
+                                showCaptchaDialog = false
+                            } else {
+                                Toast.makeText(context, "Źle rozwiązana captcha", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    ) {
+                        Text("Sprawdź")
+                    }
+                }
+            }
+        )
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.auth.AuthRepository
 import com.ggs.parkuzpp.auth.AuthValidator
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun LoginScreen(
@@ -31,13 +32,15 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
-    // 🔥 CAPTCHA STATE
     var selectedImages by remember { mutableStateOf(setOf<Int>()) }
     val correctImages = setOf(
         R.drawable.tree1,
         R.drawable.tree2,
         R.drawable.tree3
     )
+
+    var isCaptchaChecked by remember { mutableStateOf(false) }
+    var showCaptchaDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -71,21 +74,20 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 🔥 CAPTCHA
-        Text("Wybierz wszystkie obrazy z drzewami")
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        CaptchaGrid(
-            selected = selectedImages,
-            onToggle = { img ->
-                selectedImages = if (selectedImages.contains(img)) {
-                    selectedImages - img
-                } else {
-                    selectedImages + img
-                }
-            }
-        )
+        // 🔥 CHECKBOX CAPTCHA
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showCaptchaDialog = true }
+                .padding(8.dp)
+        ) {
+            Checkbox(
+                checked = isCaptchaChecked,
+                onCheckedChange = { showCaptchaDialog = true }
+            )
+            Text("Nie jestem robotem")
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -100,9 +102,8 @@ fun LoginScreen(
                     return@Button
                 }
 
-                // 🔥 CAPTCHA CHECK
-                if (selectedImages != correctImages) {
-                    Toast.makeText(context, "Rozwiąż captchę poprawnie", Toast.LENGTH_SHORT).show()
+                if (!isCaptchaChecked) {
+                    Toast.makeText(context, "Potwierdź captchę", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
@@ -150,8 +151,49 @@ fun LoginScreen(
                 .padding(8.dp)
         )
     }
-}
 
+    // 🔥 CAPTCHA DIALOG (NOWY)
+    if (showCaptchaDialog) {
+        AlertDialog(
+            onDismissRequest = { showCaptchaDialog = false },
+            confirmButton = {},
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+                    Text("Zaznacz wszystkie obrazy zawierające drzewa")
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    CaptchaGrid(
+                        selected = selectedImages,
+                        onToggle = { img ->
+                            selectedImages = if (selectedImages.contains(img)) {
+                                selectedImages - img
+                            } else {
+                                selectedImages + img
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            if (selectedImages == correctImages) {
+                                isCaptchaChecked = true
+                                showCaptchaDialog = false
+                            } else {
+                                Toast.makeText(context, "Źle rozwiązana captcha", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    ) {
+                        Text("Sprawdź")
+                    }
+                }
+            }
+        )
+    }
+}
 @Composable
 fun CaptchaGrid(
     selected: Set<Int>,
@@ -168,14 +210,15 @@ fun CaptchaGrid(
 
     Column {
         for (row in 0 until 2) {
-            Row {
+            Row(modifier = Modifier.fillMaxWidth()) {
                 for (col in 0 until 3) {
                     val index = row * 3 + col
                     val imgRes = images[index]
 
                     Card(
                         modifier = Modifier
-                            .size(100.dp)
+                            .weight(1f)
+                            .aspectRatio(1f)
                             .padding(4.dp)
                             .clickable { onToggle(imgRes) }
                     ) {
@@ -183,10 +226,10 @@ fun CaptchaGrid(
                             Image(
                                 painter = painterResource(id = imgRes),
                                 contentDescription = null,
+                                contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
 
-                            // 🔥 PRZYCIEMNIENIE PO KLIKNIĘCIU
                             if (selected.contains(imgRes)) {
                                 Box(
                                     modifier = Modifier
