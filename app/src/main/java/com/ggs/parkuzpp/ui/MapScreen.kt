@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ggs.parkuzpp.R
+import com.ggs.parkuzpp.ui.theme.ParkUZPrimaryOrange
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,7 +28,6 @@ fun MapScreen(
     onOpenMenu: () -> Unit,
     onNavigateToCamera: () -> Unit
 ) {
-    val parkuzOrange = Color(0xFFFF5722)
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -63,12 +63,12 @@ fun MapScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 IconButton(onClick = onOpenMenu) {
-                    Icon(Icons.Default.Menu, contentDescription = "Menu", tint = parkuzOrange)
+                    Icon(Icons.Default.Menu, contentDescription = "Menu", tint = ParkUZPrimaryOrange)
                 }
 
                 Text(
                     text = "ParkUZ",
-                    color = parkuzOrange,
+                    color = ParkUZPrimaryOrange,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -103,7 +103,7 @@ fun MapScreen(
                         fontSize = 16.sp,
                         modifier = Modifier.weight(1f)
                     )
-                    Icon(Icons.Default.Mic, contentDescription = "Mikrofon", tint = parkuzOrange)
+                    Icon(Icons.Default.Mic, contentDescription = "Mikrofon", tint = ParkUZPrimaryOrange)
                 }
             }
         }
@@ -129,7 +129,7 @@ fun MapScreen(
                 ) {
                     Text(
                         text = "+",
-                        color = parkuzOrange,
+                        color = ParkUZPrimaryOrange,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
@@ -187,7 +187,7 @@ fun MapScreen(
                             .fillMaxWidth()
                             .height(52.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = parkuzOrange)
+                        colors = ButtonDefaults.buttonColors(containerColor = ParkUZPrimaryOrange)
                     ) {
                         Text(
                             text = "P  Parkuj tutaj",

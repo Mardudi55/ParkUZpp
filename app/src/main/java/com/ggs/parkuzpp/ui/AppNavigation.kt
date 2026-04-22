@@ -6,18 +6,24 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -31,6 +37,7 @@ import androidx.navigation.compose.rememberNavController
 import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.camera.CameraController
 import com.ggs.parkuzpp.camera.CameraViewModel
+import com.ggs.parkuzpp.ui.theme.ParkUZPrimaryOrange
 import kotlinx.coroutines.launch
 
 @Composable
@@ -120,7 +127,6 @@ fun MainScreen(onLogout: () -> Unit) {
     val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val parkuzOrange = Color(0xFFFF5722)
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -130,29 +136,16 @@ fun MainScreen(onLogout: () -> Unit) {
                 Text(
                     text = "Menu",
                     fontSize = 24.sp,
-                    color = parkuzOrange,
+                    color = ParkUZPrimaryOrange,
                     modifier = Modifier.padding(16.dp)
                 )
-                Divider()
+                HorizontalDivider()
                 NavigationDrawerItem(
                     label = { Text("Mój Profil") },
                     selected = false,
                     icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
                     onClick = { /* TODO: Otwórz profil */ }
                 )
-                NavigationDrawerItem(
-                    label = { Text("Ustawienia") },
-                    selected = false,
-                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                    onClick = { /* TODO: Otwórz ustawienia */ }
-                )
-                NavigationDrawerItem(
-                    label = { Text("O aplikacji") },
-                    selected = false,
-                    icon = { Icon(Icons.Default.Info, contentDescription = null) },
-                    onClick = { /* TODO: Otwórz info */ }
-                )
-                Spacer(modifier = Modifier.weight(1f))
                 NavigationDrawerItem(
                     label = { Text("Wyloguj się") },
                     selected = false,
@@ -164,60 +157,19 @@ fun MainScreen(onLogout: () -> Unit) {
     ) {
         Scaffold(
             bottomBar = {
-                NavigationBar(
-                    containerColor = Color.White,
-                    tonalElevation = 8.dp
-                ) {
-                    NavigationBarItem(
-                        selected = currentRoute == "map",
-                        onClick = {
-                            if (currentRoute != "map") {
-                                bottomNavController.navigate("map") {
-                                    popUpTo(bottomNavController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+                // UŻYWAMY NASZEGO CUSTOMOWEGO PASKA DOLNEGO
+                CustomBottomNavBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { route ->
+                        if (currentRoute != route) {
+                            bottomNavController.navigate(route) {
+                                popUpTo(bottomNavController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                        },
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_logo),
-                                contentDescription = "Mapa",
-                                modifier = Modifier.size(24.dp)
-                            )
-                        },
-                        label = { Text("Mapa") },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.White,
-                            selectedTextColor = parkuzOrange,
-                            indicatorColor = parkuzOrange
-                        )
-                    )
-                    NavigationBarItem(
-                        selected = currentRoute == "history",
-                        onClick = {
-                            if (currentRoute != "history") {
-                                bottomNavController.navigate("history") {
-                                    popUpTo(bottomNavController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_logo),
-                                contentDescription = "Historia",
-                                modifier = Modifier.size(24.dp)
-                            )
-                        },
-                        label = { Text("Historia") },
-                        colors = NavigationBarItemDefaults.colors(
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray
-                        )
-                    )
-                }
+                        }
+                    }
+                )
             }
         ) { paddingValues ->
             NavHost(
@@ -228,14 +180,93 @@ fun MainScreen(onLogout: () -> Unit) {
                 composable("map") {
                     MapScreen(
                         onOpenMenu = { scope.launch { drawerState.open() } },
-                        // Nawigacja do kamery musi użyć głównego navControllera (nie jest w MainScreen)
-                        onNavigateToCamera = { /* Tu używamy zewnętrznego navController, najlepiej przez lambdę z MainScreen, ale na potrzeby uproszczenia zostawiam komentarz */ }
+                        onNavigateToCamera = { /* Nawigacja kamery */ }
                     )
                 }
                 composable("history") {
-                    HistoryScreen()
+                    HistoryScreen(
+                        onOpenMenu = { scope.launch { drawerState.open() } }
+                    )
                 }
             }
         }
+    }
+}
+
+// =========================================
+// CUSTOMOWE KOMPONENTY PASKA DOLNEGO
+// =========================================
+
+@Composable
+fun CustomBottomNavBar(
+    currentRoute: String?,
+    onNavigate: (String) -> Unit
+) {
+    val parkuzOrange = Color(0xFFFF5722)
+
+    Surface(
+        color = Color.White,
+        shadowElevation = 16.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 24.dp)
+                .navigationBarsPadding(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CustomNavItem(
+                text = "Mapa",
+                icon = Icons.Default.Map,
+                isSelected = currentRoute == "map",
+                activeColor = parkuzOrange,
+                onClick = { onNavigate("map") }
+            )
+            CustomNavItem(
+                text = "Historia",
+                icon = Icons.Default.History,
+                isSelected = currentRoute == "history",
+                activeColor = parkuzOrange,
+                onClick = { onNavigate("history") }
+            )
+        }
+    }
+}
+
+@Composable
+fun CustomNavItem(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean,
+    activeColor: Color,
+    onClick: () -> Unit
+) {
+    val bgColor = if (isSelected) activeColor else Color.Transparent
+    val contentColor = if (isSelected) Color.White else Color.Gray
+
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(bgColor)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 36.dp, vertical = 8.dp), // Zapewnia szeroki, pomarańczowy "kafelek"
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = text,
+            tint = contentColor,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = text,
+            color = contentColor,
+            fontSize = 12.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        )
     }
 }

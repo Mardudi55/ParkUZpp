@@ -19,3 +19,6 @@ val LightSurfaceCard = Color(0xFFE5E7EB) // Slightly darker light grey card back
 val LightTextFieldContainer = Color(0xFFFFFFFF) // Pure white for text input fields
 val LightTextPrimary = Color(0xFF1A1A1A) // Very dark grey, close to black
 val LightTextSecondary = Color(0xFF757575) // Mid-grey for secondary text
+
+
+val lightGrayBg = Color(0xFFF5F7FA)
