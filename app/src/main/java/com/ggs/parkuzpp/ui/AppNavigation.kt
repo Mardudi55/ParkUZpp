@@ -5,33 +5,47 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.camera.CameraController
 import com.ggs.parkuzpp.camera.CameraViewModel
+import kotlinx.coroutines.launch
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(isDarkTheme: Boolean, onThemeChange: (Boolean) -> Unit) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "login") {
-
         composable("login") {
             LoginScreen(
+                isDarkTheme = isDarkTheme,       // <-- DODANE: Przekazanie stanu motywu
+                onThemeChange = onThemeChange,   // <-- DODANE: Przekazanie funkcji zmiany motywu
                 onNavigateToMap = {
-                    navController.navigate("map") {
+                    navController.navigate("main") {
                         popUpTo("login") { inclusive = true }
                     }
                 },
@@ -41,24 +55,22 @@ fun AppNavigation() {
 
         composable("register") {
             RegisterScreen(
+                isDarkTheme = isDarkTheme,
+                onThemeChange = onThemeChange,
                 onNavigateToLogin = { navController.popBackStack() }
             )
         }
 
-        composable("map") {
-            MapScreen(
-                onNavigateToHistory = { navController.navigate("history") },
-                onNavigateToAccount = { navController.navigate("account") },
-                onNavigateToCamera = { navController.navigate("camera") }
+        composable("main") {
+            MainScreen(
+                isDarkTheme = isDarkTheme,
+                onThemeChange = onThemeChange,
+                onLogout = {
+                    navController.navigate("login") {
+                        popUpTo("main") { inclusive = true }
+                    }
+                }
             )
-        }
-
-        composable("account") {
-            AccountScreen()
-        }
-
-        composable("history") {
-            HistoryScreen()
         }
 
         composable("camera") {
@@ -101,8 +113,201 @@ fun AppNavigation() {
                     controller = controller
                 )
             } else {
-                Text(text = "Aby użyć aparatu, musisz zezwolić na dostęp do niego.")
+                Text(
+                    text = "Aby użyć aparatu, musisz zezwolić na dostęp do niego.",
+                    color = MaterialTheme.colorScheme.onBackground
+                )
             }
         }
+    }
+}
+
+@Composable
+fun MainScreen(
+    isDarkTheme: Boolean,
+    onThemeChange: (Boolean) -> Unit,
+    onLogout: () -> Unit
+) {
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val bottomNavController = rememberNavController()
+
+    val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier.width(320.dp),
+                drawerContainerColor = MaterialTheme.colorScheme.surface
+            ) {
+                AccountScreen(
+                    currentRoute = currentRoute,
+                    isDarkTheme = isDarkTheme,
+                    onThemeChange = onThemeChange,
+                    onNavigate = { route ->
+                        scope.launch { drawerState.close() }
+                        if (currentRoute != route) {
+                            bottomNavController.navigate(route) {
+                                popUpTo(bottomNavController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    },
+                    onLogout = {
+                        scope.launch { drawerState.close() }
+                        onLogout()
+                    }
+                )
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                CustomTopAppBar(
+                    onOpenMenu = { scope.launch { drawerState.open() } }
+                )
+            },
+            bottomBar = {
+                CustomBottomNavBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { route ->
+                        if (currentRoute != route) {
+                            bottomNavController.navigate(route) {
+                                popUpTo(bottomNavController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            NavHost(
+                navController = bottomNavController,
+                startDestination = "map",
+                modifier = Modifier.padding(paddingValues)
+            ) {
+                composable("map") {
+                    MapScreen(
+                        onOpenMenu = { scope.launch { drawerState.open() } },
+                        onNavigateToCamera = { /* Nawigacja kamery */ }
+                    )
+                }
+                composable("history") {
+                    HistoryScreen(
+                        onOpenMenu = { scope.launch { drawerState.open() } }
+                    )
+                }
+            }
+        }
+    }
+}
+
+// =========================================
+// CUSTOMOWE KOMPONENTY PASEK GÓRNY I DOLNY
+// =========================================
+
+@Composable
+fun CustomTopAppBar(onOpenMenu: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .statusBarsPadding(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        IconButton(onClick = onOpenMenu) {
+            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.primary)
+        }
+
+        Text(
+            text = "ParkUZ",
+            color = MaterialTheme.colorScheme.primary,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Icon(
+            painter = painterResource(id = R.drawable.ic_logo_withoutbg),
+            contentDescription = "ParkUZ Logo",
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape),
+            tint = Color.Unspecified
+        )
+    }
+}
+
+@Composable
+fun CustomBottomNavBar(
+    currentRoute: String?,
+    onNavigate: (String) -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 8.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 24.dp)
+                .navigationBarsPadding(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CustomNavItem(
+                text = "Map",
+                icon = Icons.Default.Map,
+                isSelected = currentRoute == "map",
+                onClick = { onNavigate("map") }
+            )
+            CustomNavItem(
+                text = "History",
+                icon = Icons.Default.History,
+                isSelected = currentRoute == "history",
+                onClick = { onNavigate("history") }
+            )
+        }
+    }
+}
+
+@Composable
+fun CustomNavItem(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val bgColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(bgColor)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 36.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = text,
+            tint = contentColor,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = text,
+            color = contentColor,
+            fontSize = 12.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        )
     }
 }

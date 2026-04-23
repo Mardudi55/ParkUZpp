@@ -37,20 +37,10 @@ android {
     }
     compileSdkMinor = 0
 
-    testOptions {
-        unitTests.all {
-            it.jvmArgs(
-                "-XX:+EnableDynamicAgentLoading",
-                "-Djdk.attach.allowAttachSelf=true"
-            )
-        }
-    }
-
 }
 
 dependencies {
 
-    implementation(libs.androidx.core)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -73,15 +63,12 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.appcheck.playintegrity)
+    implementation(libs.androidx.material.icons.extended)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.junit)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.kotlin)
-    testImplementation(libs.robolectric)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.junit)
