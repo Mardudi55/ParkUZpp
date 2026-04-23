@@ -10,24 +10,43 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ggs.parkuzpp.R
+import com.ggs.parkuzpp.location.UserTriggeredGPSService
+import kotlinx.coroutines.launch
 
+//DODAĆ
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
     onOpenMenu: () -> Unit,
     onNavigateToCamera: () -> Unit
 ) {
+    val noLocationText = stringResource(R.string.no_location_yet)
+    val couldNotGetLocationText = stringResource(R.string.could_not_get_location)
+    val saveSpotText = stringResource(R.string.save_parking_spot)
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val gps = remember { UserTriggeredGPSService(context) }
+    var coordinates by remember { mutableStateOf(noLocationText) }
     Box(
+
         modifier = Modifier.fillMaxSize()
     ) {
         // --- 1. TŁO MAPY (Placeholder) ---
@@ -38,12 +57,16 @@ fun MapScreen(
                 .background(Color(0xFF3E3E3E)),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "MIEJSCE NA MAPĘ",
-                color = Color.White.copy(alpha = 0.5f),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
+
+            Column() {
+                Text(
+                    text = "MIEJSCE NA MAPĘ",
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(text = coordinates)
+            }
         }
 
         // --- 2. GÓRNY PASEK I WYSZUKIWARKA ---
@@ -102,10 +125,41 @@ fun MapScreen(
                 shadowElevation = 4.dp,
                 modifier = Modifier.padding(bottom = 12.dp)
             ) {
-                Row(
+//                Row(
+//                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    Text(
+//                        text = "+",
+//                        color = MaterialTheme.colorScheme.primary, // Zmiana z parkuzOrange
+//                        fontWeight = FontWeight.Bold,
+//                        fontSize = 18.sp
+//                    )
+//                    Spacer(modifier = Modifier.width(8.dp))
+//                    Text(
+//                        text = "Dodaj lokalizację",
+//                        color = MaterialTheme.colorScheme.onSurface, // Zmiana z Color.Black
+//                        fontWeight = FontWeight.Medium,
+//                        fontSize = 14.sp
+//                    )
+//                }
+
+                Button(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                    onClick = {
+                    scope.launch {
+                        try {
+                            val location = gps.getCurrentLocation()
+                            coordinates = if (location != null) {
+                                "Lat: ${location.latitude}, Lng: ${location.longitude}"
+                            } else {
+                                couldNotGetLocationText
+                            }
+                        } catch (_: SecurityException) {
+                            coordinates = couldNotGetLocationText
+                        }
+                    }
+                }) {
                     Text(
                         text = "+",
                         color = MaterialTheme.colorScheme.primary, // Zmiana z parkuzOrange

@@ -18,9 +18,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ggs.parkuzpp.R
 
 // Model danych pod Firebase
 data class ParkingHistoryItem(
@@ -55,7 +57,7 @@ fun HistoryScreen(
         // --- 2. GŁÓWNA ZAWARTOŚĆ ---
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Text(
-                text = "Historia Parkingów",
+                text = stringResource(R.string.historia_parking_w),
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
