@@ -37,6 +37,15 @@ android {
     }
     compileSdkMinor = 0
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+        unitTests.all {
+            it.jvmArgs("-XX:+EnableDynamicAgentLoading")
+        }
+    }
+
 }
 
 dependencies {
@@ -69,6 +78,11 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     testImplementation(libs.junit)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin.v521)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.core.ktx)
+    testImplementation(libs.robolectric)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.junit)
