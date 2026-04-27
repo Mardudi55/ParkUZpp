@@ -2,6 +2,7 @@
 agp = "9.1.1"
 cameraxVersion = "1.6.0"
 coilCompose = "2.7.0"
+coreKtxVersion = "1.5.0"
 firebaseBom = "34.12.0"
 kotlin = "2.3.20"
 coreKtx = "1.18.0"
@@ -11,6 +12,8 @@ espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 composeBom = "2026.03.01"
+mockitoKotlinVersion = "6.3.1"
+mockitoMockitoKotlin = "5.2.1"
 navigationCompose = "2.9.7"
 navigationFragmentKtx = "2.9.7"
 playServicesLocation = "21.3.0"
@@ -32,6 +35,7 @@ androidx-material-icons-extended = { module = "androidx.compose.material:materia
 androidx-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 androidx-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigationFragmentKtx" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
+core-ktx = { module = "androidx.test:core-ktx", version.ref = "coreKtxVersion" }
 firebase-appcheck-playintegrity = { module = "com.google.firebase:firebase-appcheck-playintegrity" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
@@ -49,6 +53,8 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+mockito-kotlin-v521 = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoMockitoKotlin" }
+mockito-kotlin-v631 = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlinVersion" }
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
