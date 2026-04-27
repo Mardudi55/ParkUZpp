@@ -137,6 +137,7 @@ fun MainScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = drawerState.isOpen || currentRoute != "map",
         drawerContent = {
             ModalDrawerSheet(
                 modifier = Modifier.width(320.dp),
