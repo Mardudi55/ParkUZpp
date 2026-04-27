@@ -199,7 +199,6 @@ fun MainScreen(
             ) {
                 composable("map") {
                     MapScreen(
-                        onOpenMenu = { scope.launch { drawerState.open() } },
                         onNavigateToCamera = onNavigateToCamera
                     )
                 }
@@ -213,9 +212,6 @@ fun MainScreen(
     }
 }
 
-// =========================================
-// CUSTOMOWE KOMPONENTY PASEK GÓRNY I DOLNY
-// =========================================
 
 @Composable
 fun CustomTopAppBar(onOpenMenu: () -> Unit) {
