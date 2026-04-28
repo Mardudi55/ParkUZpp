@@ -100,10 +100,10 @@ fun AccountScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
         DrawerMenuItem(
-            text = "Account",
+            text = "Change Password",
             icon = Icons.Default.AccountCircle,
             isSelected = currentRoute == "account",
-            onClick = { /* TODO */ }
+            onClick = { onNavigate("password") }
         )
         Spacer(modifier = Modifier.height(8.dp))
         DrawerMenuItem(

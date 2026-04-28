@@ -3,9 +3,9 @@ package com.ggs.parkuzpp.auth
 import com.google.firebase.auth.FirebaseAuth
 import android.app.Activity
 
-class AuthRepository {
-
-    private val auth = FirebaseAuth.getInstance()
+class AuthRepository(
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+) {
 
     fun register(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
         auth.createUserWithEmailAndPassword(email, password)
@@ -24,7 +24,7 @@ class AuthRepository {
         callback: (Boolean, String?) -> Unit
     ) {
         auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener(activity) { task: com.google.android.gms.tasks.Task<com.google.firebase.auth.AuthResult> ->
+            .addOnCompleteListener(activity) { task ->
                 if (task.isSuccessful) {
                     callback(true, null)
                 } else {
