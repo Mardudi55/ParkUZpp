@@ -42,8 +42,8 @@ fun AppNavigation(isDarkTheme: Boolean, onThemeChange: (Boolean) -> Unit) {
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
             LoginScreen(
-                isDarkTheme = isDarkTheme,       // <-- DODANE: Przekazanie stanu motywu
-                onThemeChange = onThemeChange,   // <-- DODANE: Przekazanie funkcji zmiany motywu
+                isDarkTheme = isDarkTheme,
+                onThemeChange = onThemeChange,
                 onNavigateToMap = {
                     navController.navigate("main") {
                         popUpTo("login") { inclusive = true }
@@ -69,7 +69,8 @@ fun AppNavigation(isDarkTheme: Boolean, onThemeChange: (Boolean) -> Unit) {
                     navController.navigate("login") {
                         popUpTo("main") { inclusive = true }
                     }
-                }
+                },
+                onNavigateToCamera = { navController.navigate("camera") }
             )
         }
 
@@ -126,7 +127,8 @@ fun AppNavigation(isDarkTheme: Boolean, onThemeChange: (Boolean) -> Unit) {
 fun MainScreen(
     isDarkTheme: Boolean,
     onThemeChange: (Boolean) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToCamera: () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -137,6 +139,7 @@ fun MainScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = drawerState.isOpen || currentRoute != "map",
         drawerContent = {
             ModalDrawerSheet(
                 modifier = Modifier.width(320.dp),
@@ -150,7 +153,9 @@ fun MainScreen(
                         scope.launch { drawerState.close() }
                         if (currentRoute != route) {
                             bottomNavController.navigate(route) {
-                                popUpTo(bottomNavController.graph.startDestinationId) { saveState = true }
+                                popUpTo(bottomNavController.graph.startDestinationId) {
+                                    saveState = true
+                                }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -176,7 +181,9 @@ fun MainScreen(
                     onNavigate = { route ->
                         if (currentRoute != route) {
                             bottomNavController.navigate(route) {
-                                popUpTo(bottomNavController.graph.startDestinationId) { saveState = true }
+                                popUpTo(bottomNavController.graph.startDestinationId) {
+                                    saveState = true
+                                }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -192,8 +199,7 @@ fun MainScreen(
             ) {
                 composable("map") {
                     MapScreen(
-                        onOpenMenu = { scope.launch { drawerState.open() } },
-                        onNavigateToCamera = { /* Nawigacja kamery */ }
+                        onNavigateToCamera = onNavigateToCamera
                     )
                 }
                 composable("history") {
@@ -206,9 +212,6 @@ fun MainScreen(
     }
 }
 
-// =========================================
-// CUSTOMOWE KOMPONENTY PASEK GÓRNY I DOLNY
-// =========================================
 
 @Composable
 fun CustomTopAppBar(onOpenMenu: () -> Unit) {
@@ -222,7 +225,11 @@ fun CustomTopAppBar(onOpenMenu: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         IconButton(onClick = onOpenMenu) {
-            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.primary)
+            Icon(
+                Icons.Default.Menu,
+                contentDescription = "Menu",
+                tint = MaterialTheme.colorScheme.primary
+            )
         }
 
         Text(
@@ -285,7 +292,8 @@ fun CustomNavItem(
     onClick: () -> Unit
 ) {
     val bgColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+    val contentColor =
+        if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
 
     Column(
         modifier = Modifier

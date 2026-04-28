@@ -1,15 +1,40 @@
 package com.ggs.parkuzpp.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.Geocoder
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,71 +42,127 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ggs.parkuzpp.R
+import androidx.core.content.ContextCompat
 import com.ggs.parkuzpp.location.UserTriggeredGPSService
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Locale
 
-//DODAĆ
+/**
+ * A screen displaying a Google Maps instance, allowing the user to search for parking,
+ * center the map on their current geographical location, and initiate the parking procedure.
+ * * This composable automatically handles location permission requests upon entering the screen.
+ * It also decodes the user's coordinates into a readable street address.
+ *
+ * @param onNavigateToCamera A callback triggered when the user presses the camera action button
+ * to proceed with documenting the parking spot.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
-    onOpenMenu: () -> Unit,
     onNavigateToCamera: () -> Unit
 ) {
-    val noLocationText = stringResource(R.string.no_location_yet)
-    val couldNotGetLocationText = stringResource(R.string.could_not_get_location)
-    val saveSpotText = stringResource(R.string.save_parking_spot)
-
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val gps = remember { UserTriggeredGPSService(context) }
-    var coordinates by remember { mutableStateOf(noLocationText) }
-    Box(
 
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // --- 1. TŁO MAPY (Placeholder) ---
-        // Zostaje sztywne, bo to tylko zaślepka na prawdziwą mapę
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFF3E3E3E)),
-            contentAlignment = Alignment.Center
-        ) {
+    var currentAddress by remember { mutableStateOf("Kliknij celownik, aby pobrać adres") }
 
-            Column() {
-                Text(
-                    text = "MIEJSCE NA MAPĘ",
-                    color = Color.White.copy(alpha = 0.5f),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(text = coordinates)
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(LatLng(51.938, 15.506), 15f)
+    }
+
+    val mapProperties by remember(hasLocationPermission) {
+        mutableStateOf(MapProperties(isMyLocationEnabled = hasLocationPermission))
+    }
+
+    val mapUiSettings by remember {
+        mutableStateOf(MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false))
+    }
+
+    suspend fun getAddressFromLocation(lat: Double, lng: Double): String {
+        return withContext(Dispatchers.IO) {
+            try {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocation(lat, lng, 1)
+
+                if (!addresses.isNullOrEmpty()) {
+                    val address = addresses[0]
+                    val street = address.thoroughfare ?: "Nieznana ulica"
+                    val number = address.subThoroughfare ?: ""
+                    val city = address.locality ?: ""
+
+                    if (number.isNotEmpty()) "$street $number, $city" else "$street, $city"
+                } else {
+                    "Nie znaleziono adresu w tej lokalizacji"
+                }
+            } catch (_: Exception) {
+                "Błąd pobierania adresu"
             }
         }
+    }
 
-        // --- 2. GÓRNY PASEK I WYSZUKIWARKA ---
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        hasLocationPermission = fineGranted || coarseGranted
+    }
+
+    LaunchedEffect(Unit) {
+        if (!hasLocationPermission) {
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState,
+            properties = mapProperties,
+            uiSettings = mapUiSettings
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
         ) {
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .statusBarsPadding()
                     .shadow(4.dp, RoundedCornerShape(24.dp))
-                    // Zmiana Color.White na dynamiczny surface z motywu
                     .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
@@ -91,146 +172,151 @@ fun MapScreen(
                 ) {
                     Icon(
                         Icons.Default.Search,
-                        contentDescription = "Szukaj",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant // Zmiana z Color.Gray
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Dokąd zmierzasz?",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, // Zmiana z Color.Gray
+                        text = "Gdzie chcesz zaparkować?",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 16.sp,
                         modifier = Modifier.weight(1f)
                     )
                     Icon(
                         Icons.Default.Mic,
-                        contentDescription = "Mikrofon",
-                        tint = MaterialTheme.colorScheme.primary // Zmiana z parkuzOrange
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
         }
 
-        // --- 3. DOLNE ELEMENTY (Przycisk dodawania + Karta Parkingu) ---
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .padding(16.dp),
-            horizontalAlignment = Alignment.End
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Surface(
-                onClick = onNavigateToCamera,
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surface, // Zmiana z Color.White
-                shadowElevation = 4.dp,
-                modifier = Modifier.padding(bottom = 12.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-//                Row(
-//                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    Text(
-//                        text = "+",
-//                        color = MaterialTheme.colorScheme.primary, // Zmiana z parkuzOrange
-//                        fontWeight = FontWeight.Bold,
-//                        fontSize = 18.sp
-//                    )
-//                    Spacer(modifier = Modifier.width(8.dp))
-//                    Text(
-//                        text = "Dodaj lokalizację",
-//                        color = MaterialTheme.colorScheme.onSurface, // Zmiana z Color.Black
-//                        fontWeight = FontWeight.Medium,
-//                        fontSize = 14.sp
-//                    )
-//                }
-
-                Button(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                Surface(
                     onClick = {
-                    scope.launch {
-                        try {
-                            val location = gps.getCurrentLocation()
-                            coordinates = if (location != null) {
-                                "Lat: ${location.latitude}, Lng: ${location.longitude}"
-                            } else {
-                                couldNotGetLocationText
+                        if (hasLocationPermission) {
+                            scope.launch {
+                                val location = gps.getCurrentLocation()
+                                if (location != null) {
+                                    val userLatLng = LatLng(location.latitude, location.longitude)
+
+                                    cameraPositionState.animate(
+                                        CameraUpdateFactory.newLatLngZoom(userLatLng, 17f)
+                                    )
+
+                                    currentAddress = "Lokalizowanie..."
+                                    currentAddress = getAddressFromLocation(location.latitude, location.longitude)
+                                }
                             }
-                        } catch (_: SecurityException) {
-                            coordinates = couldNotGetLocationText
+                        } else {
+                            permissionLauncher.launch(
+                                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+                            )
                         }
+                    },
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .shadow(4.dp, CircleShape)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.MyLocation,
+                            contentDescription = "Wyśrodkuj na mnie",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
-                }) {
-                    Text(
-                        text = "+",
-                        color = MaterialTheme.colorScheme.primary, // Zmiana z parkuzOrange
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Dodaj lokalizację",
-                        color = MaterialTheme.colorScheme.onSurface, // Zmiana z Color.Black
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp
-                    )
+                }
+
+                Surface(
+                    onClick = onNavigateToCamera,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .shadow(6.dp, CircleShape)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Zrób zdjęcie miejsca",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
                 }
             }
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface // Zmiana z Color.White
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp)
-                ) {
+                Column(modifier = Modifier.padding(20.dp)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "Parking A1 - Centrum",
-                            fontWeight = FontWeight.Bold,
+                            text = "Wybrana lokalizacja",
+                            fontWeight = FontWeight.ExtraBold,
                             fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onSurface // Zmiana z Color.Black
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                            text = "85%",
-                            color = Color(0xFF4CAF50), // Zostawiamy zielony na sztywno
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
+
+                        Surface(
+                            color = Color(0xFFE8F5E9),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "GPS OK",
+                                color = Color(0xFF2E7D32),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "ul. Podgórna 50, Zielona Góra",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, // Zmiana z Color.Gray
-                        fontSize = 13.sp
+                        text = currentAddress,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = { /* TODO: Akcja parkowania */ },
+                        onClick = { },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary // Zmiana z parkuzOrange
-                        )
+                            .height(54.dp),
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         Text(
-                            text = "P  Parkuj tutaj",
+                            text = "P Zatwierdź i Parkuj",
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White // Zostawiamy biały na pomarańczowym guziku
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
