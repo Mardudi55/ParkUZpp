@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.border
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.stringResource
+import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.ui.theme.ParkUZPrimaryOrange
 import com.ggs.parkuzpp.ui.theme.ParkUZStatusGreen
 
@@ -29,39 +31,38 @@ fun AccountScreen(
     isDarkTheme: Boolean,
     onThemeChange: (Boolean) -> Unit,
     onNavigate: (String) -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    currentLanguage: String,
+    onLanguageChange: (String) -> Unit
 ) {
-    var selectedLanguage by remember { mutableStateOf("EN") }
-
-    // Dynamiczne kolory pobierane z motywu
     val borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
     val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface) // Tło menu prosto z motywu
+            .background(MaterialTheme.colorScheme.surface)
             .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
     ) {
         // =========================================
         // ZAKŁADKI NAWIGACJI
         // =========================================
         DrawerMenuItem(
-            text = "Map",
+            text = stringResource(R.string.menu_map),
             icon = Icons.Default.Map,
             isSelected = currentRoute == "map",
             onClick = { onNavigate("map") }
         )
         Spacer(modifier = Modifier.height(8.dp))
         DrawerMenuItem(
-            text = "History",
+            text = stringResource(R.string.menu_history),
             icon = Icons.Default.History,
             isSelected = currentRoute == "history",
             onClick = { onNavigate("history") }
         )
         Spacer(modifier = Modifier.height(8.dp))
         DrawerMenuItem(
-            text = "Account",
+            text = stringResource(R.string.menu_account),
             icon = Icons.Default.AccountCircle,
             isSelected = currentRoute == "account",
             onClick = { /* TODO */ }
@@ -69,13 +70,15 @@ fun AccountScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
         HorizontalDivider(color = borderColor, thickness = 1.dp)
-        Spacer(modifier = Modifier.height(304.dp))
+
+        // Zmniejszyłem spacer, żeby na mniejszych ekranach menu się nie rozjechało
+        Spacer(modifier = Modifier.weight(1f))
 
         // =========================================
         // USTAWIENIA: JĘZYK
         // =========================================
         Text(
-            text = "LANGUAGE",
+            text = stringResource(R.string.heading_language),
             fontSize = 11.sp,
             color = textSecondaryColor,
             fontWeight = FontWeight.Bold,
@@ -89,36 +92,49 @@ fun AccountScreen(
                 .border(1.dp, borderColor, RoundedCornerShape(8.dp))
                 .clip(RoundedCornerShape(8.dp))
         ) {
-            Box(
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(if (selectedLanguage == "EN") MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable { selectedLanguage = "EN" },
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .height(40.dp) // Możesz zostawić 36.dp lub 40.dp dla lepszego klikania
+                    .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(8.dp))
             ) {
-                Text(
-                    text = "EN",
-                    color = if (selectedLanguage == "EN") ParkUZPrimaryOrange else textSecondaryColor,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
-                )
-            }
-            Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(borderColor))
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(if (selectedLanguage == "PL") MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable { selectedLanguage = "PL" },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "PL",
-                    color = if (selectedLanguage == "PL") ParkUZPrimaryOrange else textSecondaryColor,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
-                )
+                // PRZYCISK EN
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight() // Wypełnienie wysokości dla lepszego centrowania
+                        // Tło nadajemy TYLKO gdy język jest wybrany
+                        .background(if (currentLanguage == "en") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
+                        .clickable { onLanguageChange("en") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "EN",
+                        color = if (currentLanguage == "en") MaterialTheme.colorScheme.primary else textSecondaryColor,
+                        fontWeight = if (currentLanguage == "en") FontWeight.Bold else FontWeight.Normal
+                    )
+                }
+
+                // LINIA ROZDZIELAJĄCA
+                Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(borderColor))
+
+                // PRZYCISK PL
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        // Tło nadajemy TYLKO gdy język jest wybrany
+                        .background(if (currentLanguage == "pl") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
+                        .clickable { onLanguageChange("pl") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "PL",
+                        color = if (currentLanguage == "pl") MaterialTheme.colorScheme.primary else textSecondaryColor,
+                        fontWeight = if (currentLanguage == "pl") FontWeight.Bold else FontWeight.Normal
+                    )
+                }
             }
         }
 
@@ -128,7 +144,7 @@ fun AccountScreen(
         // USTAWIENIA: WYGLĄD
         // =========================================
         Text(
-            text = "APPEARANCE",
+            text = stringResource(R.string.heading_appearance),
             fontSize = 11.sp,
             color = textSecondaryColor,
             fontWeight = FontWeight.Bold,
@@ -138,7 +154,7 @@ fun AccountScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)) // Tło kafelka z przełącznikiem
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
                 .padding(horizontal = 16.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -152,9 +168,9 @@ fun AccountScreen(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "Dark Mode",
+                    text = stringResource(R.string.dark_mode),
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface, // Zależne od motywu
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 14.sp
                 )
             }
@@ -171,7 +187,7 @@ fun AccountScreen(
             )
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(32.dp))
 
         // =========================================
         // STOPKA
@@ -194,7 +210,7 @@ fun AccountScreen(
             IconButton(onClick = onLogout) {
                 Icon(
                     Icons.AutoMirrored.Filled.ExitToApp,
-                    contentDescription = "Wyloguj",
+                    contentDescription = stringResource(R.string.logout_desc),
                     tint = textSecondaryColor
                 )
             }
@@ -202,7 +218,6 @@ fun AccountScreen(
     }
 }
 
-// Komponent pomocniczy dla zakładki w menu
 @Composable
 fun DrawerMenuItem(
     text: String,
@@ -211,8 +226,6 @@ fun DrawerMenuItem(
     onClick: () -> Unit
 ) {
     val bgColor = if (isSelected) ParkUZPrimaryOrange.copy(alpha = 0.08f) else Color.Transparent
-
-    // Dynamiczny kolor tekstu ikonek: pomarańczowy jeśli zaznaczone, szarawy (z motywu) jeśli nie
     val contentColor = if (isSelected) ParkUZPrimaryOrange else MaterialTheme.colorScheme.onSurfaceVariant
 
     Row(
@@ -224,7 +237,6 @@ fun DrawerMenuItem(
             .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Lewy, pomarańczowy pasek zaznaczenia
         Box(
             modifier = Modifier
                 .width(4.dp)
@@ -232,18 +244,14 @@ fun DrawerMenuItem(
                 .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp))
                 .background(if (isSelected) ParkUZPrimaryOrange else Color.Transparent)
         )
-
         Spacer(modifier = Modifier.width(16.dp))
-
         Icon(
             imageVector = icon,
-            contentDescription = text,
+            contentDescription = null,
             tint = contentColor,
             modifier = Modifier.size(22.dp)
         )
-
         Spacer(modifier = Modifier.width(16.dp))
-
         Text(
             text = text,
             color = contentColor,

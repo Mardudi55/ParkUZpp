@@ -29,7 +29,7 @@ data class ParkingHistoryItem(
     val id: String,
     val address: String,
     val date: String,
-    val imageUrl: String // Na później, np. pod Coil
+    val imageUrl: String
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,12 +37,6 @@ data class ParkingHistoryItem(
 fun HistoryScreen(
     onOpenMenu: () -> Unit
 ) {
-    // ==========================================
-    // TODO: [FIREBASE] MIEJSCE NA PODPIĘCIE BAZY
-    // Tutaj zastąpisz 'mockData' zmienną ze stanem (np. z ViewModelu)
-    // która nasłuchuje na zmiany w kolekcji Firebase Firestore.
-    // Przykład: val historyItems by viewModel.historyItems.collectAsState()
-    // ==========================================
     val mockData = listOf(
         ParkingHistoryItem("1", "ul. Marszałkowska 10", "24.05.2024, 14:30", ""),
         ParkingHistoryItem("2", "Plac Defilad 1", "22.05.2024, 09:15", "")
@@ -51,10 +45,8 @@ fun HistoryScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background) // <-- Zależne od motywu
+            .background(MaterialTheme.colorScheme.background)
     ) {
-
-        // --- 2. GŁÓWNA ZAWARTOŚĆ ---
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Text(
                 text = stringResource(R.string.historia_parking_w),
@@ -69,17 +61,24 @@ fun HistoryScreen(
                 value = "",
                 onValueChange = {},
                 placeholder = {
-                    Text("Szukaj lokalizacji...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = stringResource(R.string.search_placeholder), // Podmienione
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 },
                 leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = "Szukaj", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = stringResource(R.string.search_placeholder), // Podmienione
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 24.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant, // Zamiast lightGrayBg
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
@@ -88,10 +87,9 @@ fun HistoryScreen(
                 )
             )
 
-            // Lista zapisanych lokalizacji
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 100.dp) // Zabezpieczenie przed ucięciem przez dolny pasek
+                contentPadding = PaddingValues(bottom = 100.dp)
             ) {
                 items(mockData) { item ->
                     HistoryItemCard(item = item)
@@ -107,7 +105,7 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface // <-- Zależne od motywu (karta)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
@@ -117,20 +115,18 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Placeholder zdjęcia
             Box(
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant), // Szarawe tło placeholdera zależne od motywu
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                // TODO: Jak Firebase będzie miało linki do zdjęć, użyjecie tu Coil (AsyncImage)
+                // TODO: Coil (AsyncImage)
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Teksty i przyciski
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -138,7 +134,7 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                     text = item.address,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onSurface // Główny tekst na karcie
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -148,13 +144,13 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                         Icons.Default.CalendarToday,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant // Poboczny tekst/ikona
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = item.date,
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant // Poboczny tekst
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -164,9 +160,8 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Przycisk "Mapa"
                     OutlinedButton(
-                        onClick = { /* TODO: Otwórz mapę ze współrzędnymi */ },
+                        onClick = { /* TODO: Otwórz mapę */ },
                         modifier = Modifier
                             .weight(1f)
                             .height(36.dp),
@@ -182,31 +177,25 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Mapa",
+                            text = stringResource(R.string.btn_map), // Podmienione
                             color = MaterialTheme.colorScheme.primary,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
 
-                    // Przycisk "Usuń"
                     OutlinedButton(
-                        onClick = {
-                            // ==========================================
-                            // TODO: [FIREBASE] USUWANIE
-                            // ==========================================
-                        },
+                        onClick = { /* TODO: Usuwanie */ },
                         modifier = Modifier
                             .width(48.dp)
                             .height(36.dp),
                         shape = RoundedCornerShape(12.dp),
-                        // Używamy koloru błędu (error) wbudowanego w MaterialTheme dla czerwieni
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f)),
                         contentPadding = PaddingValues(0.dp)
                     ) {
                         Icon(
                             Icons.Default.Delete,
-                            contentDescription = "Usuń",
+                            contentDescription = stringResource(R.string.delete_desc), // Podmienione
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(18.dp)
                         )
