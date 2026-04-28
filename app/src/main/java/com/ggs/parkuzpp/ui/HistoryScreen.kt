@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
@@ -13,6 +12,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,39 +22,29 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ggs.parkuzpp.R
-
-// Model danych pod Firebase
-data class ParkingHistoryItem(
-    val id: String,
-    val address: String,
-    val date: String,
-    val imageUrl: String // Na później, np. pod Coil
-)
+import com.ggs.parkuzpp.model.HistoryViewModel
+import com.ggs.parkuzpp.model.ParkSpot
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
-    onOpenMenu: () -> Unit
+    onOpenMenu: () -> Unit,
+    viewModel: HistoryViewModel = viewModel()
 ) {
-    // ==========================================
-    // TODO: [FIREBASE] MIEJSCE NA PODPIĘCIE BAZY
-    // Tutaj zastąpisz 'mockData' zmienną ze stanem (np. z ViewModelu)
-    // która nasłuchuje na zmiany w kolekcji Firebase Firestore.
-    // Przykład: val historyItems by viewModel.historyItems.collectAsState()
-    // ==========================================
-    val mockData = listOf(
-        ParkingHistoryItem("1", "ul. Marszałkowska 10", "24.05.2024, 14:30", ""),
-        ParkingHistoryItem("2", "Plac Defilad 1", "22.05.2024, 09:15", "")
-    )
+    // Nasłuchiwanie na dane z bazy oraz stan odświeżania z ViewModelu
+    val historyItems by viewModel.historyItems.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background) // <-- Zależne od motywu
+            .background(MaterialTheme.colorScheme.background)
     ) {
-
-        // --- 2. GŁÓWNA ZAWARTOŚĆ ---
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Text(
                 text = stringResource(R.string.historia_parking_w),
@@ -79,7 +69,7 @@ fun HistoryScreen(
                     .padding(bottom = 24.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant, // Zamiast lightGrayBg
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
@@ -88,13 +78,39 @@ fun HistoryScreen(
                 )
             )
 
-            // Lista zapisanych lokalizacji
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 100.dp) // Zabezpieczenie przed ucięciem przez dolny pasek
+            // Implementacja gestu przeciągnij-by-odświeżyć
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refresh() },
+                modifier = Modifier.fillMaxSize()
             ) {
-                items(mockData) { item ->
-                    HistoryItemCard(item = item)
+                // Wyświetlanie pustego stanu, jeśli nie ma żadnych zapisanych parkingów
+                if (historyItems.isEmpty() && !isRefreshing) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Text(
+                            text = "Brak zapisanych lokalizacji",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 32.dp)
+                        )
+                    }
+                } else {
+                    // Lista zapisanych lokalizacji
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(bottom = 100.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(historyItems, key = { it.id }) { item ->
+                            HistoryItemCard(
+                                item = item,
+                                formattedDate = viewModel.formatDate(item.timestamp),
+                                onDeleteClick = { viewModel.deleteItem(item.id) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -102,12 +118,16 @@ fun HistoryScreen(
 }
 
 @Composable
-fun HistoryItemCard(item: ParkingHistoryItem) {
+fun HistoryItemCard(
+    item: ParkSpot,
+    formattedDate: String,
+    onDeleteClick: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface // <-- Zależne od motywu (karta)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
@@ -117,28 +137,47 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Placeholder zdjęcia
+            val photoUri = item.photos.firstOrNull()
+
+            // Kontener na zdjęcie zachowujący stylowanie (rozmiar, zaokrąglenie)
             Box(
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant), // Szarawe tło placeholdera zależne od motywu
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                // TODO: Jak Firebase będzie miało linki do zdjęć, użyjecie tu Coil (AsyncImage)
+                if (photoUri != null) {
+                    // Coil AsyncImage sam zajmie się odczytaniem pliku lokalnego na podstawie URI
+                    AsyncImage(
+                        model = photoUri,
+                        contentDescription = "Zdjęcie miejsca parkingowego",
+                        modifier = Modifier.fillMaxSize(),
+                        // Crop wypełni cały kwadrat 80x80 przycinając zdjęcie,
+                        // dzięki czemu nie będzie rozciągnięte.
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // Fallback: Ikona mapy, jeśli z jakiegoś powodu nie ma zdjęcia
+                    Icon(
+                        imageVector = Icons.Default.Map,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Teksty i przyciski
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = item.address,
+                    text = item.label.ifEmpty { "Nieznana lokalizacja" },
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onSurface // Główny tekst na karcie
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -148,13 +187,13 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                         Icons.Default.CalendarToday,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant // Poboczny tekst/ikona
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = item.date,
+                        text = formattedDate,
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant // Poboczny tekst
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -166,7 +205,7 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                 ) {
                     // Przycisk "Mapa"
                     OutlinedButton(
-                        onClick = { /* TODO: Otwórz mapę ze współrzędnymi */ },
+                        onClick = { /* TODO: Nawigacja do mapy ze współrzędnymi */ },
                         modifier = Modifier
                             .weight(1f)
                             .height(36.dp),
@@ -191,16 +230,11 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
 
                     // Przycisk "Usuń"
                     OutlinedButton(
-                        onClick = {
-                            // ==========================================
-                            // TODO: [FIREBASE] USUWANIE
-                            // ==========================================
-                        },
+                        onClick = onDeleteClick,
                         modifier = Modifier
                             .width(48.dp)
                             .height(36.dp),
                         shape = RoundedCornerShape(12.dp),
-                        // Używamy koloru błędu (error) wbudowanego w MaterialTheme dla czerwieni
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f)),
                         contentPadding = PaddingValues(0.dp)
                     ) {
