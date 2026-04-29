@@ -28,7 +28,10 @@ import com.ggs.parkuzpp.model.HistoryViewModel
 import com.ggs.parkuzpp.model.ParkSpot
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -137,9 +140,10 @@ fun HistoryItemCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val photoUri = item.photos.firstOrNull()
 
-            // Kontener na zdjęcie zachowujący stylowanie (rozmiar, zaokrąglenie)
+            val photoString = item.photos.firstOrNull()
+            val context = LocalContext.current // Potrzebne do zbudowania żądania Coil
+
             Box(
                 modifier = Modifier
                     .size(80.dp)
@@ -147,20 +151,20 @@ fun HistoryItemCard(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                if (photoUri != null) {
-                    // Coil AsyncImage sam zajmie się odczytaniem pliku lokalnego na podstawie URI
+                if (!photoString.isNullOrEmpty()) {
+                    // Budujemy jawne żądanie (ImageRequest) na podstawie przekonwertowanego Uri
                     AsyncImage(
-                        model = photoUri,
-                        contentDescription = "Zdjęcie miejsca parkingowego",
+                        model = ImageRequest.Builder(context)
+                            .data(Uri.parse(photoString)) // Zamieniamy String z Firebase na natywne Uri pliku
+                            .crossfade(true) // Płynne pojawienie się zdjęcia
+                            .build(),
+                        contentDescription = "Zdjęcie zaparkowanego samochodu",
                         modifier = Modifier.fillMaxSize(),
-                        // Crop wypełni cały kwadrat 80x80 przycinając zdjęcie,
-                        // dzięki czemu nie będzie rozciągnięte.
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    // Fallback: Ikona mapy, jeśli z jakiegoś powodu nie ma zdjęcia
                     Icon(
-                        imageVector = Icons.Default.Map,
+                        Icons.Default.Map,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(32.dp)
@@ -203,9 +207,8 @@ fun HistoryItemCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Przycisk "Mapa"
                     OutlinedButton(
-                        onClick = { /* TODO: Nawigacja do mapy ze współrzędnymi */ },
+                        onClick = { /* TODO: Mapa */ },
                         modifier = Modifier
                             .weight(1f)
                             .height(36.dp),
@@ -228,7 +231,6 @@ fun HistoryItemCard(
                         )
                     }
 
-                    // Przycisk "Usuń"
                     OutlinedButton(
                         onClick = onDeleteClick,
                         modifier = Modifier
