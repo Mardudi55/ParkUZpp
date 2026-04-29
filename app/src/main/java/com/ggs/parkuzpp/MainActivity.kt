@@ -8,6 +8,8 @@ import androidx.compose.runtime.*
 import com.ggs.parkuzpp.ui.AppNavigation
 import com.ggs.parkuzpp.ui.theme.ParkUZTheme
 import com.google.firebase.FirebaseApp
+import androidx.compose.runtime.*
+
 
 class MainActivity : ComponentActivity() {
 
@@ -29,7 +31,6 @@ class MainActivity : ComponentActivity() {
                 LocaleHelper.setLocale(this, newLang)
                 this.recreate()
             }
-
             ParkUZTheme(darkTheme = isDarkTheme) {
                 AppNavigation(
                     isDarkTheme = isDarkTheme,
@@ -40,10 +41,10 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
     override fun attachBaseContext(newBase: Context) {
         val prefs = newBase.getSharedPreferences("settings", Context.MODE_PRIVATE)
         val lang = prefs.getString("lang", "pl") ?: "pl"
         super.attachBaseContext(LocaleHelper.setLocale(newBase, lang))
     }
+
 }

@@ -45,8 +45,12 @@ fun AppNavigation(
 
 ) {
     val navController = rememberNavController()
+    val authRepository = remember { com.ggs.parkuzpp.auth.AuthRepository() }
 
-    NavHost(navController = navController, startDestination = "login") {
+    NavHost(
+        navController = navController,
+        startDestination = if (authRepository.isUserLoggedIn()) "main" else "login"
+    ) {
         composable("login") {
             LoginScreen(
                 isDarkTheme = isDarkTheme,
@@ -229,6 +233,11 @@ fun MainScreen(
                 composable("history") {
                     HistoryScreen(
                         onOpenMenu = { scope.launch { drawerState.open() } }
+                    )
+                }
+                composable("password") {
+                    PasswordScreen(
+                        onBack = { bottomNavController.popBackStack() }
                     )
                 }
             }
