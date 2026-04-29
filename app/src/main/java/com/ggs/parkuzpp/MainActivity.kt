@@ -16,7 +16,6 @@ class MainActivity : ComponentActivity() {
         FirebaseApp.initializeApp(this)
 
         setContent {
-            // Wczytujemy zapisany język lub domyślnie "pl"
             val prefs = remember { getSharedPreferences("settings", Context.MODE_PRIVATE) }
             var currentLanguage by remember {
                 mutableStateOf(prefs.getString("lang", "pl") ?: "pl")
@@ -24,26 +23,24 @@ class MainActivity : ComponentActivity() {
 
             var isDarkTheme by remember { mutableStateOf(false) }
 
-            // Funkcja zmiany języka
             val onLanguageChange: (String) -> Unit = { newLang ->
                 prefs.edit().putString("lang", newLang).apply()
                 currentLanguage = newLang
                 LocaleHelper.setLocale(this, newLang)
-                this.recreate() // Odświeża całą aktywność z nowym językiem
+                this.recreate()
             }
 
             ParkUZTheme(darkTheme = isDarkTheme) {
                 AppNavigation(
                     isDarkTheme = isDarkTheme,
                     onThemeChange = { isDarkTheme = it },
-                    currentLanguage = currentLanguage,      // Przekazujemy dalej
-                    onLanguageChange = onLanguageChange     // Przekazujemy dalej
+                    currentLanguage = currentLanguage,
+                    onLanguageChange = onLanguageChange
                 )
             }
         }
     }
 
-    // To jest kluczowe, żeby system Android wiedział, że język się zmienił przy starcie
     override fun attachBaseContext(newBase: Context) {
         val prefs = newBase.getSharedPreferences("settings", Context.MODE_PRIVATE)
         val lang = prefs.getString("lang", "pl") ?: "pl"

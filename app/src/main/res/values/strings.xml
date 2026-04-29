@@ -1,7 +1,5 @@
 <resources>
     <string name="app_name" translatable="false">ParkUZ++</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment" translatable="false">Hello blank fragment</string>
     <string name="could_not_get_location">Could not get location</string>
     <string name="no_location_yet">No location yet</string>
     <string name="save_parking_spot" >Save parking spot</string>

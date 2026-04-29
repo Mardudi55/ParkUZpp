@@ -71,7 +71,6 @@ fun AccountScreen(
         Spacer(modifier = Modifier.height(24.dp))
         HorizontalDivider(color = borderColor, thickness = 1.dp)
 
-        // Zmniejszyłem spacer, żeby na mniejszych ekranach menu się nie rozjechało
         Spacer(modifier = Modifier.weight(1f))
 
         // =========================================
@@ -95,16 +94,14 @@ fun AccountScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp) // Możesz zostawić 36.dp lub 40.dp dla lepszego klikania
+                    .height(40.dp)
                     .border(1.dp, borderColor, RoundedCornerShape(8.dp))
                     .clip(RoundedCornerShape(8.dp))
             ) {
-                // PRZYCISK EN
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight() // Wypełnienie wysokości dla lepszego centrowania
-                        // Tło nadajemy TYLKO gdy język jest wybrany
+                        .fillMaxHeight()
                         .background(if (currentLanguage == "en") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
                         .clickable { onLanguageChange("en") },
                     contentAlignment = Alignment.Center
@@ -116,15 +113,12 @@ fun AccountScreen(
                     )
                 }
 
-                // LINIA ROZDZIELAJĄCA
                 Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(borderColor))
 
-                // PRZYCISK PL
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        // Tło nadajemy TYLKO gdy język jest wybrany
                         .background(if (currentLanguage == "pl") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
                         .clickable { onLanguageChange("pl") },
                     contentAlignment = Alignment.Center

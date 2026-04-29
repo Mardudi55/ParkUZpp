@@ -25,7 +25,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource // Ważne!
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -50,20 +50,16 @@ fun LoginScreen(
     val context = LocalContext.current
     val authRepository = remember { AuthRepository() }
 
-    // --- STANY ---
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var isRecaptchaVerified by remember { mutableStateOf(false) }
-    var selectedLanguage by remember { mutableStateOf("PL") }
 
-    // --- TEKSTY DO TOASTÓW (pobierane tutaj, by użyć w onClick) ---
     val fillDataMsg = stringResource(R.string.toast_fill_data)
     val verifyRobotMsg = stringResource(R.string.toast_verify_robot)
     val loggedInMsg = stringResource(R.string.toast_logged_in)
     val contextErrorMsg = stringResource(R.string.error_context)
 
-    // --- KOLORY POMOCNICZE ---
     val borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
     val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
 
@@ -117,7 +113,6 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // --- Pole Email ---
                 Text(
                     text = stringResource(R.string.label_email),
                     fontSize = 12.sp,
@@ -160,7 +155,6 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // --- Pole Hasło ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -210,7 +204,6 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // --- WIDŻET RECAPTCHA ---
                 RecaptchaWidget(
                     isVerified = isRecaptchaVerified,
                     onVerifyChange = { isRecaptchaVerified = it }
@@ -218,7 +211,6 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // --- Przycisk Logowania ---
                 Button(
                     onClick = {
                         val emailTrimmed = email.trim()
@@ -261,7 +253,6 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // --- Tekst Rejestracji ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
@@ -293,7 +284,6 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                // JĘZYK
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -304,16 +294,14 @@ fun LoginScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(40.dp) // Możesz zostawić 36.dp lub 40.dp dla lepszego klikania
+                            .height(40.dp)
                             .border(1.dp, borderColor, RoundedCornerShape(8.dp))
                             .clip(RoundedCornerShape(8.dp))
                     ) {
-                        // PRZYCISK EN
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxHeight() // Wypełnienie wysokości dla lepszego centrowania
-                                // Tło nadajemy TYLKO gdy język jest wybrany
+                                .fillMaxHeight()
                                 .background(if (currentLanguage == "en") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
                                 .clickable { onLanguageChange("en") },
                             contentAlignment = Alignment.Center
@@ -325,15 +313,12 @@ fun LoginScreen(
                             )
                         }
 
-                        // LINIA ROZDZIELAJĄCA
                         Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(borderColor))
 
-                        // PRZYCISK PL
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                // Tło nadajemy TYLKO gdy język jest wybrany
                                 .background(if (currentLanguage == "pl") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
                                 .clickable { onLanguageChange("pl") },
                             contentAlignment = Alignment.Center
@@ -349,7 +334,6 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // DARK MODE
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -379,7 +363,6 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- Stopka ---
         Text(
             text = stringResource(R.string.footer_terms),
             fontSize = 9.sp,

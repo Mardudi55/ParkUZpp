@@ -20,7 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource // <-- Dodany import dla tłumaczeń
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,9 +51,9 @@ fun AppNavigation(
             LoginScreen(
                 isDarkTheme = isDarkTheme,
                 onThemeChange = onThemeChange,
-                currentLanguage = currentLanguage,     // <--- PODAJE DALEJ do ekranu
-                onLanguageChange = onLanguageChange,   // <--- PODAJE DALEJ do ekranu
-                onNavigateToMap = { navController.navigate("main") }, // ZMIANA: "map" -> "main"
+                currentLanguage = currentLanguage,
+                onLanguageChange = onLanguageChange,
+                onNavigateToMap = { navController.navigate("main") },
                 onNavigateToRegister = { navController.navigate("register")}
             )
         }
@@ -62,8 +62,8 @@ fun AppNavigation(
             RegisterScreen(
                 isDarkTheme = isDarkTheme,
                 onThemeChange = onThemeChange,
-                currentLanguage = currentLanguage,     // <--- PODAJE DALEJ
-                onLanguageChange = onLanguageChange,   // <--- PODAJE DALEJ
+                currentLanguage = currentLanguage,
+                onLanguageChange = onLanguageChange,
                 onNavigateToLogin = { navController.popBackStack() }
             )
         }
@@ -72,8 +72,8 @@ fun AppNavigation(
             AccountScreen(
                 isDarkTheme = isDarkTheme,
                 onThemeChange = onThemeChange,
-                currentLanguage = currentLanguage,     // <--- PODAJE DALEJ
-                onLanguageChange = onLanguageChange,   // <--- PODAJE DALEJ
+                currentLanguage = currentLanguage,
+                onLanguageChange = onLanguageChange,
                 onNavigate = { route -> navController.navigate(route) },
                 onLogout = { /* logika wylogowania */ }
             )
@@ -83,8 +83,8 @@ fun AppNavigation(
             MainScreen(
                 isDarkTheme = isDarkTheme,
                 onThemeChange = onThemeChange,
-                currentLanguage = currentLanguage,    // <--- DODANE
-                onLanguageChange = onLanguageChange,  // <--- DODANE
+                currentLanguage = currentLanguage,
+                onLanguageChange = onLanguageChange,
                 onLogout = {
                     navController.navigate("login") {
                         popUpTo("main") { inclusive = true }
@@ -135,7 +135,7 @@ fun AppNavigation(
                 )
             } else {
                 Text(
-                    text = stringResource(id = R.string.camera_permission_denied), // Zmiana na resource
+                    text = stringResource(id = R.string.camera_permission_denied),
                     color = MaterialTheme.colorScheme.onBackground
                 )
             }
@@ -171,8 +171,8 @@ fun MainScreen(
                     currentRoute = currentRoute,
                     isDarkTheme = isDarkTheme,
                     onThemeChange = onThemeChange,
-                    currentLanguage = currentLanguage,   // <--- DODANE
-                    onLanguageChange = onLanguageChange, // <--- DODANE
+                    currentLanguage = currentLanguage,
+                    onLanguageChange = onLanguageChange,
                     onNavigate = { route ->
                         scope.launch { drawerState.close() }
                         if (currentRoute != route) {

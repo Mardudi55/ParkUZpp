@@ -51,7 +51,6 @@ fun RegisterScreen(
     var isLoading by remember { mutableStateOf(false) }
     var isRecaptchaVerified by remember { mutableStateOf(false) }
 
-    // Teksty Toastów
     val fillDataMsg = stringResource(R.string.toast_fill_data)
     val passMismatchMsg = stringResource(R.string.toast_passwords_not_match)
     val verifyRobotMsg = stringResource(R.string.toast_verify_robot)
@@ -111,7 +110,6 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Email
                 Text(text = stringResource(R.string.label_email), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
                 TextField(
@@ -131,7 +129,6 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Hasło
                 Text(text = stringResource(R.string.label_password), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
                 TextField(
@@ -148,7 +145,6 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Powtórz Hasło
                 Text(text = stringResource(R.string.label_confirm_password), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
                 TextField(
@@ -165,12 +161,11 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // reCAPTCHA (z LoginScreen)
+                // reCAPTCHA
                 RecaptchaWidget(isVerified = isRecaptchaVerified, onVerifyChange = { isRecaptchaVerified = it })
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Przycisk
                 Button(
                     onClick = {
                         val emailTrimmed = email.trim()
@@ -210,7 +205,6 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Link do logowania
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     Text(text = stringResource(R.string.already_have_account), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
                     Text(
@@ -235,20 +229,17 @@ fun RegisterScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Język (uproszczony widok jak w Login)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(40.dp) // Możesz zostawić 36.dp lub 40.dp dla lepszego klikania
+                        .height(40.dp)
                         .border(1.dp, borderColor, RoundedCornerShape(8.dp))
                         .clip(RoundedCornerShape(8.dp))
                 ) {
-                    // PRZYCISK EN
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .fillMaxHeight() // Wypełnienie wysokości dla lepszego centrowania
-                            // Tło nadajemy TYLKO gdy język jest wybrany
+                            .fillMaxHeight()
                             .background(if (currentLanguage == "en") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
                             .clickable { onLanguageChange("en") },
                         contentAlignment = Alignment.Center
@@ -259,16 +250,12 @@ fun RegisterScreen(
                             fontWeight = if (currentLanguage == "en") FontWeight.Bold else FontWeight.Normal
                         )
                     }
-
-                    // LINIA ROZDZIELAJĄCA
                     Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(borderColor))
 
-                    // PRZYCISK PL
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            // Tło nadajemy TYLKO gdy język jest wybrany
                             .background(if (currentLanguage == "pl") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
                             .clickable { onLanguageChange("pl") },
                         contentAlignment = Alignment.Center
@@ -281,7 +268,6 @@ fun RegisterScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                // Dark Mode
                 Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Brightness4, contentDescription = null, tint = textSecondaryColor, modifier = Modifier.size(18.dp))

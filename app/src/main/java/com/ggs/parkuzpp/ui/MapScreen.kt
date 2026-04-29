@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import android.location.Geocoder
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,7 +46,6 @@ fun MapScreen(
     val scope = rememberCoroutineScope()
     val gps = remember { UserTriggeredGPSService(context) }
 
-    // Wyciągnięte teksty do zmiennych dla Geocodera
     val unknownStreet = stringResource(R.string.map_unknown_street)
     val addressNotFound = stringResource(R.string.map_address_not_found)
     val errorAddress = stringResource(R.string.map_error_address)
@@ -56,7 +54,7 @@ fun MapScreen(
     var currentAddress by remember { mutableStateOf("") }
     val initialAddressText = stringResource(R.string.map_click_to_locate)
 
-    // Inicjalizacja adresu startowego
+
     LaunchedEffect(Unit) {
         if (currentAddress.isEmpty()) currentAddress = initialAddressText
     }
@@ -133,7 +131,6 @@ fun MapScreen(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Przycisk My Location
                 Surface(
                     onClick = {
                         if (hasLocationPermission) {
@@ -164,7 +161,6 @@ fun MapScreen(
                     }
                 }
 
-                // Przycisk Aparatu
                 Surface(
                     onClick = onNavigateToCamera,
                     shape = CircleShape,
@@ -182,7 +178,6 @@ fun MapScreen(
                 }
             }
 
-            // Karta z adresem
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
