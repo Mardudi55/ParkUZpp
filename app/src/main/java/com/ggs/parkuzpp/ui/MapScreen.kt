@@ -5,50 +5,25 @@ import android.content.pm.PackageManager
 import android.location.Geocoder
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.location.UserTriggeredGPSService
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -62,15 +37,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
 
-/**
- * A screen displaying a Google Maps instance, allowing the user to search for parking,
- * center the map on their current geographical location, and initiate the parking procedure.
- * * This composable automatically handles location permission requests upon entering the screen.
- * It also decodes the user's coordinates into a readable street address.
- *
- * @param onNavigateToCamera A callback triggered when the user presses the camera action button
- * to proceed with documenting the parking spot.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
@@ -80,7 +46,18 @@ fun MapScreen(
     val scope = rememberCoroutineScope()
     val gps = remember { UserTriggeredGPSService(context) }
 
-    var currentAddress by remember { mutableStateOf("Kliknij celownik, aby pobrać adres") }
+    val unknownStreet = stringResource(R.string.map_unknown_street)
+    val addressNotFound = stringResource(R.string.map_address_not_found)
+    val errorAddress = stringResource(R.string.map_error_address)
+    val locatingText = stringResource(R.string.map_locating)
+
+    var currentAddress by remember { mutableStateOf("") }
+    val initialAddressText = stringResource(R.string.map_click_to_locate)
+
+
+    LaunchedEffect(Unit) {
+        if (currentAddress.isEmpty()) currentAddress = initialAddressText
+    }
 
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -110,16 +87,16 @@ fun MapScreen(
 
                 if (!addresses.isNullOrEmpty()) {
                     val address = addresses[0]
-                    val street = address.thoroughfare ?: "Nieznana ulica"
+                    val street = address.thoroughfare ?: unknownStreet
                     val number = address.subThoroughfare ?: ""
                     val city = address.locality ?: ""
 
                     if (number.isNotEmpty()) "$street $number, $city" else "$street, $city"
                 } else {
-                    "Nie znaleziono adresu w tej lokalizacji"
+                    addressNotFound
                 }
             } catch (_: Exception) {
-                "Błąd pobierania adresu"
+                errorAddress
             }
         }
     }
@@ -127,24 +104,17 @@ fun MapScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
-        hasLocationPermission = fineGranted || coarseGranted
+        hasLocationPermission = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
     }
 
     LaunchedEffect(Unit) {
         if (!hasLocationPermission) {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
+            permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -153,55 +123,11 @@ fun MapScreen(
         )
 
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.TopCenter)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .statusBarsPadding()
-                    .shadow(4.dp, RoundedCornerShape(24.dp))
-                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "Gdzie chcesz zaparkować?",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 16.sp,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Icon(
-                        Icons.Default.Mic,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -212,31 +138,23 @@ fun MapScreen(
                                 val location = gps.getCurrentLocation()
                                 if (location != null) {
                                     val userLatLng = LatLng(location.latitude, location.longitude)
-
-                                    cameraPositionState.animate(
-                                        CameraUpdateFactory.newLatLngZoom(userLatLng, 17f)
-                                    )
-
-                                    currentAddress = "Lokalizowanie..."
+                                    cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(userLatLng, 17f))
+                                    currentAddress = locatingText
                                     currentAddress = getAddressFromLocation(location.latitude, location.longitude)
                                 }
                             }
                         } else {
-                            permissionLauncher.launch(
-                                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-                            )
+                            permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
                         }
                     },
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier
-                        .size(56.dp)
-                        .shadow(4.dp, CircleShape)
+                    modifier = Modifier.size(56.dp).shadow(4.dp, CircleShape)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.MyLocation,
-                            contentDescription = "Wyśrodkuj na mnie",
+                            contentDescription = stringResource(R.string.desc_center_me),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(28.dp)
                         )
@@ -247,14 +165,12 @@ fun MapScreen(
                     onClick = onNavigateToCamera,
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .size(56.dp)
-                        .shadow(6.dp, CircleShape)
+                    modifier = Modifier.size(56.dp).shadow(6.dp, CircleShape)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Zrób zdjęcie miejsca",
+                            contentDescription = stringResource(R.string.desc_take_spot_photo),
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(30.dp)
                         )
@@ -275,7 +191,7 @@ fun MapScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "Wybrana lokalizacja",
+                            text = stringResource(R.string.map_selected_location),
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 18.sp,
                             color = MaterialTheme.colorScheme.onSurface
@@ -286,7 +202,7 @@ fun MapScreen(
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                text = "GPS OK",
+                                text = stringResource(R.string.map_gps_status),
                                 color = Color(0xFF2E7D32),
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                                 fontSize = 10.sp,
@@ -308,13 +224,11 @@ fun MapScreen(
 
                     Button(
                         onClick = { },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(54.dp),
+                        modifier = Modifier.fillMaxWidth().height(54.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Text(
-                            text = "P Zatwierdź i Parkuj",
+                            text = stringResource(R.string.btn_confirm_park),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
