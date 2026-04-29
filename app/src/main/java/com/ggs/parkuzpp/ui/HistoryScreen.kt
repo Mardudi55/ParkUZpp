@@ -62,10 +62,17 @@ fun HistoryScreen(
                 value = "",
                 onValueChange = {},
                 placeholder = {
-                    Text("Szukaj lokalizacji...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = stringResource(R.string.search_placeholder), // Podmienione
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 },
                 leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = "Szukaj", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = stringResource(R.string.search_placeholder), // Podmienione
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -224,7 +231,7 @@ fun HistoryItemCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Mapa",
+                            text = stringResource(R.string.btn_map), // Podmienione
                             color = MaterialTheme.colorScheme.primary,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
@@ -242,7 +249,7 @@ fun HistoryItemCard(
                     ) {
                         Icon(
                             Icons.Default.Delete,
-                            contentDescription = "Usuń",
+                            contentDescription = stringResource(R.string.delete_desc), // Podmienione
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(18.dp)
                         )

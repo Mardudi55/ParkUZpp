@@ -12,9 +12,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.rememberAsyncImagePainter
+import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.camera.CameraController
 import com.ggs.parkuzpp.camera.CameraViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -63,7 +65,7 @@ fun CameraScreen(
                 .align(Alignment.BottomCenter)
                 .padding(32.dp)
         ) {
-            Text("Zrób zdjęcie")
+            Text(stringResource(id = R.string.take_photo)) // Podmienione
         }
 
         // Okno dialogowe potwierdzające zapis lokalizacji i zdjęcia
@@ -93,7 +95,7 @@ fun CameraScreen(
                 text = {
                     Image(
                         painter = rememberAsyncImagePainter(capturedUri),
-                        contentDescription = "Zrobione zdjęcie",
+                        contentDescription = stringResource(id = R.string.captured_photo_desc), // Podmienione
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
