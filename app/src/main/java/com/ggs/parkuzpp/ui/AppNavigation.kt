@@ -70,6 +70,7 @@ fun AppNavigation(isDarkTheme: Boolean, onThemeChange: (Boolean) -> Unit) {
                 isDarkTheme = isDarkTheme,
                 onThemeChange = onThemeChange,
                 onLogout = {
+                    authRepository.logout()
                     navController.navigate("login") {
                         popUpTo("main") { inclusive = true }
                     }
