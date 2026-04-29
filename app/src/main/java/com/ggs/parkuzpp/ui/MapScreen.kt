@@ -63,6 +63,11 @@ fun MapScreen(
     val gps = remember { UserTriggeredGPSService(context) }
     val repository = remember { ParkingRepository() }
 
+    val unknownStreet = stringResource(R.string.map_unknown_street)
+    val addressNotFound = stringResource(R.string.map_address_not_found)
+    val errorAddress = stringResource(R.string.map_error_address)
+    val locatingText = stringResource(R.string.map_locating)
+
     var currentAddress by remember { mutableStateOf("Kliknij celownik, aby pobrać adres") }
     var googleMap by remember { mutableStateOf<GoogleMap?>(null) }
 
