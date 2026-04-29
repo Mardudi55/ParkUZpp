@@ -90,6 +90,7 @@ fun AppNavigation(
                 currentLanguage = currentLanguage,
                 onLanguageChange = onLanguageChange,
                 onLogout = {
+                    authRepository.logout()
                     navController.navigate("login") {
                         popUpTo("main") { inclusive = true }
                     }
