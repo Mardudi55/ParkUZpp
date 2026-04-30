@@ -136,7 +136,9 @@ fun AppNavigation(
 
                 CameraScreen(
                     viewModel = viewModel,
-                    controller = controller
+                    controller = controller,
+                    // TUTAJ DODANO BRAKUJĄCY PARAMETR
+                    onNavigateBack = { navController.popBackStack() }
                 )
             } else {
                 Text(

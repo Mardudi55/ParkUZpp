@@ -82,8 +82,10 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
 
+
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.firebase.appcheck.playintegrity)
     implementation(platform(libs.firebase.bom))
 

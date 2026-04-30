@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
@@ -13,6 +12,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,25 +22,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ggs.parkuzpp.R
-
-// Model danych pod Firebase
-data class ParkingHistoryItem(
-    val id: String,
-    val address: String,
-    val date: String,
-    val imageUrl: String
-)
+import com.ggs.parkuzpp.model.HistoryViewModel
+import com.ggs.parkuzpp.model.ParkSpot
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
-    onOpenMenu: () -> Unit
+    onOpenMenu: () -> Unit,
+    viewModel: HistoryViewModel = viewModel()
 ) {
-    val mockData = listOf(
-        ParkingHistoryItem("1", "ul. Marszałkowska 10", "24.05.2024, 14:30", ""),
-        ParkingHistoryItem("2", "Plac Defilad 1", "22.05.2024, 09:15", "")
-    )
+    // Nasłuchiwanie na dane z bazy oraz stan odświeżania z ViewModelu
+    val historyItems by viewModel.historyItems.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     Column(
         modifier = Modifier
@@ -87,12 +88,39 @@ fun HistoryScreen(
                 )
             )
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 100.dp)
+            // Implementacja gestu przeciągnij-by-odświeżyć
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refresh() },
+                modifier = Modifier.fillMaxSize()
             ) {
-                items(mockData) { item ->
-                    HistoryItemCard(item = item)
+                // Wyświetlanie pustego stanu, jeśli nie ma żadnych zapisanych parkingów
+                if (historyItems.isEmpty() && !isRefreshing) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Text(
+                            text = "Brak zapisanych lokalizacji",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 32.dp)
+                        )
+                    }
+                } else {
+                    // Lista zapisanych lokalizacji
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(bottom = 100.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(historyItems, key = { it.id }) { item ->
+                            HistoryItemCard(
+                                item = item,
+                                formattedDate = viewModel.formatDate(item.timestamp),
+                                onDeleteClick = { viewModel.deleteItem(item.id) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -100,7 +128,11 @@ fun HistoryScreen(
 }
 
 @Composable
-fun HistoryItemCard(item: ParkingHistoryItem) {
+fun HistoryItemCard(
+    item: ParkSpot,
+    formattedDate: String,
+    onDeleteClick: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -115,6 +147,10 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
+            val photoString = item.photos.firstOrNull()
+            val context = LocalContext.current // Potrzebne do zbudowania żądania Coil
+
             Box(
                 modifier = Modifier
                     .size(80.dp)
@@ -122,7 +158,25 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                // TODO: Coil (AsyncImage)
+                if (!photoString.isNullOrEmpty()) {
+                    // Budujemy jawne żądanie (ImageRequest) na podstawie przekonwertowanego Uri
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(Uri.parse(photoString)) // Zamieniamy String z Firebase na natywne Uri pliku
+                            .crossfade(true) // Płynne pojawienie się zdjęcia
+                            .build(),
+                        contentDescription = "Zdjęcie zaparkowanego samochodu",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Map,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -131,7 +185,7 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = item.address,
+                    text = item.label.ifEmpty { "Nieznana lokalizacja" },
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onSurface
@@ -148,7 +202,7 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = item.date,
+                        text = formattedDate,
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -161,7 +215,7 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedButton(
-                        onClick = { /* TODO: Otwórz mapę */ },
+                        onClick = { /* TODO: Mapa */ },
                         modifier = Modifier
                             .weight(1f)
                             .height(36.dp),
@@ -185,7 +239,7 @@ fun HistoryItemCard(item: ParkingHistoryItem) {
                     }
 
                     OutlinedButton(
-                        onClick = { /* TODO: Usuwanie */ },
+                        onClick = onDeleteClick,
                         modifier = Modifier
                             .width(48.dp)
                             .height(36.dp),

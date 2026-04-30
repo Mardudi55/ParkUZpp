@@ -37,6 +37,22 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
 
+import com.google.android.gms.maps.GoogleMap
+import com.google.maps.android.compose.MapEffect
+import com.ggs.parkuzpp.location.MapUtils
+import com.ggs.parkuzpp.model.Coordinates
+import com.ggs.parkuzpp.model.ParkSpot
+import com.ggs.parkuzpp.model.ParkingRepository
+
+/**
+ * A screen displaying a Google Maps instance, allowing the user to search for parking,
+ * center the map on their current geographical location, and initiate the parking procedure.
+ * * This composable automatically handles location permission requests upon entering the screen.
+ * It also decodes the user's coordinates into a readable street address.
+ *
+ * @param onNavigateToCamera A callback triggered when the user presses the camera action button
+ * to proceed with documenting the parking spot.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
@@ -45,19 +61,15 @@ fun MapScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val gps = remember { UserTriggeredGPSService(context) }
+    val repository = remember { ParkingRepository() }
 
     val unknownStreet = stringResource(R.string.map_unknown_street)
     val addressNotFound = stringResource(R.string.map_address_not_found)
     val errorAddress = stringResource(R.string.map_error_address)
     val locatingText = stringResource(R.string.map_locating)
 
-    var currentAddress by remember { mutableStateOf("") }
-    val initialAddressText = stringResource(R.string.map_click_to_locate)
-
-
-    LaunchedEffect(Unit) {
-        if (currentAddress.isEmpty()) currentAddress = initialAddressText
-    }
+    var currentAddress by remember { mutableStateOf("Kliknij celownik, aby pobrać adres") }
+    var googleMap by remember { mutableStateOf<GoogleMap?>(null) }
 
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -119,9 +131,13 @@ fun MapScreen(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             properties = mapProperties,
-            uiSettings = mapUiSettings
-        )
-
+            uiSettings = mapUiSettings,
+            onMapLoaded = { /* Opcjonalnie: flaga, że mapa gotowa */ }
+        ) {
+            MapEffect(Unit) { map ->
+                googleMap = map
+            }
+        }
         Column(
             modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -223,8 +239,40 @@ fun MapScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = { },
-                        modifier = Modifier.fillMaxWidth().height(54.dp),
+                        onClick = {
+                            googleMap?.snapshot { bitmap ->
+                                scope.launch {
+                                    if (bitmap != null) {
+                                        val uri = MapUtils.saveBitmapToFile(context, bitmap)
+
+                                        val newSpot = ParkSpot(
+                                            active = true,
+                                            label = currentAddress, // Używamy adresu pobranego przez Geocoder
+                                            photos = listOf(uri.toString()), // Zapisujemy lokalny URI jako String
+                                            coordinates = Coordinates(
+                                                lat = cameraPositionState.position.target.latitude,
+                                                lng = cameraPositionState.position.target.longitude
+                                            )
+                                        )
+
+                                        // 1. Opcjonalnie dezaktywujemy stare miejsca
+                                        repository.deactivatePreviousSpots()
+
+                                        // 2. Zapisujemy nowe miejsce
+                                        val result = repository.saveParkingSpot(newSpot)
+
+                                        if (result.isSuccess) {
+                                            // Pokaż Toast lub nawiguj do historii
+                                            println("Zaparkowano pomyślnie!")
+                                        } else {
+                                            println("Błąd zapisu: ${result.exceptionOrNull()?.message}")
+                                        }
+                                    }
+                                }
+                            }
+                        },                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Text(
