@@ -73,7 +73,7 @@ fun AppNavigation(
         }
 
         composable("account") {
-            AccountScreen(
+            MenuScreen(
                 isDarkTheme = isDarkTheme,
                 onThemeChange = onThemeChange,
                 currentLanguage = currentLanguage,
@@ -137,7 +137,6 @@ fun AppNavigation(
                 CameraScreen(
                     viewModel = viewModel,
                     controller = controller,
-                    // TUTAJ DODANO BRAKUJĄCY PARAMETR
                     onNavigateBack = { navController.popBackStack() }
                 )
             } else {
@@ -174,7 +173,7 @@ fun MainScreen(
                 modifier = Modifier.width(320.dp),
                 drawerContainerColor = MaterialTheme.colorScheme.surface
             ) {
-                AccountScreen(
+                MenuScreen(
                     currentRoute = currentRoute,
                     isDarkTheme = isDarkTheme,
                     onThemeChange = onThemeChange,
@@ -239,7 +238,7 @@ fun MainScreen(
                     )
                 }
                 composable("password") {
-                    PasswordScreen(
+                    AccountScreen(
                         onBack = { bottomNavController.popBackStack() }
                     )
                 }

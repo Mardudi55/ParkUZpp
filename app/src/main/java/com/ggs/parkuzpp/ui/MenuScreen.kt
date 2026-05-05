@@ -1,6 +1,7 @@
 package com.ggs.parkuzpp.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -13,20 +14,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.border
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.res.stringResource
 import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.ui.theme.ParkUZPrimaryOrange
 import com.ggs.parkuzpp.ui.theme.ParkUZStatusGreen
 
 @Composable
-fun AccountScreen(
+fun MenuScreen(
     currentRoute: String? = null,
     isDarkTheme: Boolean,
     onThemeChange: (Boolean) -> Unit,
@@ -64,8 +64,8 @@ fun AccountScreen(
         DrawerMenuItem(
             text = stringResource(R.string.menu_account),
             icon = Icons.Default.AccountCircle,
-            isSelected = currentRoute == "account",
-            onClick = { /* TODO */ }
+            isSelected = currentRoute == "password", // <-- ZMIANA: Zaznacza gdy jesteś na zmianie hasła
+            onClick = { onNavigate("password") }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -84,6 +84,7 @@ fun AccountScreen(
             letterSpacing = 1.sp
         )
         Spacer(modifier = Modifier.height(12.dp))
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -91,44 +92,36 @@ fun AccountScreen(
                 .border(1.dp, borderColor, RoundedCornerShape(8.dp))
                 .clip(RoundedCornerShape(8.dp))
         ) {
-            Row(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-                    .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-                    .clip(RoundedCornerShape(8.dp))
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .background(if (currentLanguage == "en") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
+                    .clickable { onLanguageChange("en") },
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .background(if (currentLanguage == "en") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
-                        .clickable { onLanguageChange("en") },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "EN",
-                        color = if (currentLanguage == "en") MaterialTheme.colorScheme.primary else textSecondaryColor,
-                        fontWeight = if (currentLanguage == "en") FontWeight.Bold else FontWeight.Normal
-                    )
-                }
+                Text(
+                    text = "EN",
+                    color = if (currentLanguage == "en") MaterialTheme.colorScheme.primary else textSecondaryColor,
+                    fontWeight = if (currentLanguage == "en") FontWeight.Bold else FontWeight.Normal
+                )
+            }
 
-                Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(borderColor))
+            Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(borderColor))
 
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .background(if (currentLanguage == "pl") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
-                        .clickable { onLanguageChange("pl") },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "PL",
-                        color = if (currentLanguage == "pl") MaterialTheme.colorScheme.primary else textSecondaryColor,
-                        fontWeight = if (currentLanguage == "pl") FontWeight.Bold else FontWeight.Normal
-                    )
-                }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .background(if (currentLanguage == "pl") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
+                    .clickable { onLanguageChange("pl") },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "PL",
+                    color = if (currentLanguage == "pl") MaterialTheme.colorScheme.primary else textSecondaryColor,
+                    fontWeight = if (currentLanguage == "pl") FontWeight.Bold else FontWeight.Normal
+                )
             }
         }
 
