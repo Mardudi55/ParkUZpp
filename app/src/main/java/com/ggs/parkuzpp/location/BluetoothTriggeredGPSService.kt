@@ -8,22 +8,44 @@ import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.location.Location
 import android.os.*
-import androidx.compose.ui.res.stringResource
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import com.ggs.parkuzpp.R
 import com.google.android.gms.location.*
 
+/**
+ * A service responsible for retrieving user's current location once in the background.
+ * It is used by Bluetooth Service in the background.
+ * Location data is retrieved with a callback.
+ */
 class BluetoothTriggeredGPSService : Service() {
+
+    /**
+     * Interface used for setting up callbacks.
+     */
     interface LocationCallback {
+        /**
+         * Method handling successful GPS access.
+         * @param location The requested [Location] data.
+         */
         fun onLocationReceived(location: Location)
+
+        /**
+         * Method handling failures of GPS access.
+         */
         fun onLocationFailed()
     }
 
+    /**
+     * Class used for Android Service setup, used by internal Android Methods.
+     */
     inner class LocationBinder : Binder() {
         fun getService() = this@BluetoothTriggeredGPSService
     }
 
+    /**
+     * Companion object with Notification Data.
+     */
     companion object {
         const val CHANNEL_ID = "location_service_channel"
         const val NOTIFICATION_ID = 1001
@@ -41,6 +63,10 @@ class BluetoothTriggeredGPSService : Service() {
 
     override fun onBind(intent: Intent?) = binder
 
+    /**
+     * Method that is used to request location from the service.
+     * @param callback The [LocationCallback] callback that receives location.
+     */
     fun requestLocation(callback: LocationCallback) {
         locationCallback = callback
 
@@ -61,7 +87,7 @@ class BluetoothTriggeredGPSService : Service() {
 
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             if (location != null) {
-                callback.onLocationReceived(location)
+                callback.onLocationReceived(GPSUtils.formatLocation(location)!!)
                 stopSelf()
             } else {
                 val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 0L)
@@ -72,7 +98,7 @@ class BluetoothTriggeredGPSService : Service() {
                 fusedCallback = object : com.google.android.gms.location.LocationCallback() {
                     override fun onLocationResult(result: LocationResult) {
                         val loc = result.lastLocation
-                        if (loc != null) callback.onLocationReceived(loc)
+                        if (loc != null) callback.onLocationReceived(GPSUtils.formatLocation(loc)!!)
                         else callback.onLocationFailed()
                         fusedLocationClient.removeLocationUpdates(fusedCallback)
                         stopSelf()
@@ -89,6 +115,10 @@ class BluetoothTriggeredGPSService : Service() {
         }
     }
 
+    /**
+     * Method used for building an OS notification informing user about the GPS Access.
+     * It is required by the service for proper functioning.
+     */
     private fun buildNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notification_bt_gps_access_title))

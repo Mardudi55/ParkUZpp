@@ -11,7 +11,6 @@ import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import kotlinx.coroutines.suspendCancellableCoroutine
-import java.math.RoundingMode
 
 /**
  * A service responsible for retrieving the user's current location on demand.
@@ -117,7 +116,7 @@ class UserTriggeredGPSService(private val context: Context) {
      */
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     suspend fun getCurrentLocation(): Location? {
-        return formatLocation(if (isGmsAvailable()) {
+        return GPSUtils.formatLocation(if (isGmsAvailable()) {
             getLocationViaGms()
         } else {
             getLocationViaAndroid()
@@ -134,28 +133,11 @@ class UserTriggeredGPSService(private val context: Context) {
             .isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS
     }
 
-    /**
-     * Formats the geographic coordinates of a given [Location] to 5 decimal places.
-     * This provides accuracy up to roughly 1.1 meters while preventing unnecessary precision floating-point issues.
-     *
-     * @param location The raw [Location] object.
-     * @return The [Location] object with rounded latitude and longitude, or null if the input was null.
-     */
-    private fun formatLocation(location: Location?): Location? {
-        return if (location == null) {
-            null
-        } else {
-            val decimals = 5
-            location.latitude = location.latitude.toBigDecimal().setScale(decimals, RoundingMode.HALF_EVEN).toDouble()
-            location.longitude = location.longitude.toBigDecimal().setScale(decimals, RoundingMode.HALF_EVEN).toDouble()
-            location
-        }
-    }
 
     /**
      * Handles the cancellation of the location request coroutine.
      *
-     * @param cause The [Throwable] that caused the coroutine to be cancelled.
+     * @param cause The [Throwable] that caused the coroutine to be canceled.
      */
     private fun onCancellation(cause: Throwable) {
         Log.d("LocationService", "Location request cancelled: ${cause.message}")
