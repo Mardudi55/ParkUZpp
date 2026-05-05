@@ -53,7 +53,6 @@ class BluetoothTriggeredGPSService : Service() {
 
     private val binder = LocationBinder()
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var fusedCallback: com.google.android.gms.location.LocationCallback
     private var locationCallback: LocationCallback? = null
 
     override fun onCreate() {
@@ -90,24 +89,16 @@ class BluetoothTriggeredGPSService : Service() {
                 callback.onLocationReceived(GPSUtils.formatLocation(location)!!)
                 stopSelf()
             } else {
-                val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 0L)
-                    .setMaxUpdates(1)
-                    .setWaitForAccurateLocation(true)
-                    .build()
-
-                fusedCallback = object : com.google.android.gms.location.LocationCallback() {
-                    override fun onLocationResult(result: LocationResult) {
-                        val loc = result.lastLocation
+                fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                    .addOnSuccessListener { loc ->
                         if (loc != null) callback.onLocationReceived(GPSUtils.formatLocation(loc)!!)
                         else callback.onLocationFailed()
-                        fusedLocationClient.removeLocationUpdates(fusedCallback)
                         stopSelf()
                     }
-                }
-
-                fusedLocationClient.requestLocationUpdates(
-                    request, fusedCallback, Looper.getMainLooper()
-                )
+                    .addOnFailureListener {
+                        callback.onLocationFailed()
+                        stopSelf()
+                    }
             }
         }.addOnFailureListener {
             callback.onLocationFailed()
