@@ -56,4 +56,12 @@
     <string name="toast_register_success">Rejestracja OK</string>
     <string name="toast_register_error">Błąd rejestracji</string>
     <string name="already_have_account">Masz już konto? </string>
+    <string name="password_title">Zmiana hasła</string>
+    <string name="password_subtitle">Wpisz poniżej swoje nowe hasło. Ze względów bezpieczeństwa musi ono zawierać co najmniej 6 znaków.</string>
+    <string name="password_label_new">NOWE HASŁO</string>
+    <string name="password_placeholder">Wprowadź nowe hasło</string>
+    <string name="password_toast_length">Hasło musi mieć min. 6 znaków</string>
+    <string name="password_toast_success">Hasło zostało zmienione</string>
+    <string name="password_toast_error">Błąd: %1$s</string>
+    <string name="password_btn_change">Zmień hasło</string>
 </resources>

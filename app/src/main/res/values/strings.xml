@@ -56,4 +56,12 @@
     <string name="toast_register_success">Registration successful</string>
     <string name="toast_register_error">Registration error</string>
     <string name="already_have_account">Already have an account? </string>
+    <string name="password_title">Change Password</string>
+    <string name="password_subtitle">Enter your new password below. For security reasons, it must contain at least 6 characters.</string>
+    <string name="password_label_new">NEW PASSWORD</string>
+    <string name="password_placeholder">Enter new password</string>
+    <string name="password_toast_length">Password must be at least 6 characters long</string>
+    <string name="password_toast_success">Password changed successfully</string>
+    <string name="password_toast_error">Error: %1$s</string>
+    <string name="password_btn_change">Change password</string>
 </resources>
