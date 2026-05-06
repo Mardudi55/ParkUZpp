@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 /**
- * Repository responsible for managing parking spot data in Firebase Firestore.
- * It handles saving new spots and providing access to the "park-spots" collection.
+ * Repozytorium zarządza danymi parkowania w Firestore.
+ * System wspiera zasadę "Single Active Spot" – tylko jedno parkowanie na raz może być aktywne.
  */
 class ParkingRepository {
 
@@ -17,31 +17,47 @@ class ParkingRepository {
     private val auth = FirebaseAuth.getInstance()
     private val spotsCollection = firestore.collection("park-spots")
 
+    private val currentUid: String?
+        get() = auth.currentUser?.uid
+
     /**
-     * Saves a [ParkSpot] to Firestore.
-     * If the [ParkSpot.userId] is empty, it automatically populates it
-     * with the current authenticated user's ID.
-     *
-     * @param spot The parking spot data to save.
-     * @return Result indicating success or the caught exception.
+     * Strumień, który dostarcza JEDYNY aktywny punkt parkowania użytkownika.
+     * Używamy go na mapie do wyświetlania pinezki i sterowania przyciskiem.
+     */
+    fun getActiveSpotFlow(): Flow<ParkSpot?> = callbackFlow {
+        val uid = currentUid ?: run {
+            trySend(null)
+            return@callbackFlow
+        }
+
+        val registration = spotsCollection
+            .whereEqualTo("user-id", uid)
+            .whereEqualTo("active", true)
+            .limit(1)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
+
+                val spot = snapshot?.documents?.firstOrNull()?.let { doc ->
+                    doc.toObject(ParkSpot::class.java)?.copy(id = doc.id)
+                }
+                trySend(spot)
+            }
+
+        awaitClose { registration.remove() }
+    }
+
+    /**
+     * Zapisuje nowe miejsce i automatycznie dezaktywuje wszystkie poprzednie.
      */
     suspend fun saveParkingSpot(spot: ParkSpot): Result<Unit> {
+        val uid = currentUid ?: return Result.failure(Exception("Brak autoryzacji"))
+
         return try {
-            // Automatyczne przypisanie ID użytkownika, jeśli nie zostało podane
-            val spotToSave = if (spot.userId.isEmpty()) {
-                spot.copy(userId = auth.currentUser?.uid ?: "")
-            } else {
-                spot
-            }
+            deactivatePreviousSpots().getOrThrow()
 
-            // Sprawdzenie czy mamy ID użytkownika (wymagane w Twojej strukturze)
-            if (spotToSave.userId.isEmpty()) {
-                return Result.failure(Exception("User not authenticated"))
-            }
+            val spotToSave = spot.copy(userId = uid, active = true)
 
-            // Zapis do Firestore (używamy .add() dla automatycznego ID dokumentu)
             spotsCollection.add(spotToSave).await()
-
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -49,11 +65,24 @@ class ParkingRepository {
     }
 
     /**
-     * Marks all previous parking spots as inactive for the current user.
-     * Useful when starting a new parking session to ensure only one "active" spot exists.
+     * Aktywuje konkretny punkt z historii (np. po kliknięciu "Mapa" w HistoryScreen).
+     */
+    suspend fun activateSpot(documentId: String): Result<Unit> {
+        return try {
+            deactivatePreviousSpots().getOrThrow()
+            spotsCollection.document(documentId).update("active", true).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Ustawia active = false dla wszystkich punktów użytkownika.
+     * Wywoływane przy kliknięciu "Zakończ parkowanie" lub przed nowym zapisem.
      */
     suspend fun deactivatePreviousSpots(): Result<Unit> {
-        val uid = auth.currentUser?.uid ?: return Result.failure(Exception("No user"))
+        val uid = currentUid ?: return Result.failure(Exception("Brak użytkownika"))
 
         return try {
             val activeSpots = spotsCollection
@@ -62,53 +91,44 @@ class ParkingRepository {
                 .get()
                 .await()
 
-            firestore.runBatch { batch ->
-                for (doc in activeSpots.documents) {
-                    batch.update(doc.reference, "active", false)
-                }
-            }.await()
-
+            if (!activeSpots.isEmpty) {
+                firestore.runBatch { batch ->
+                    for (doc in activeSpots.documents) {
+                        batch.update(doc.reference, "active", false)
+                    }
+                }.await()
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
+    /**
+     * Pobiera całą historię. Mapuje ID dokumentów, aby działało usuwanie/aktywacja.
+     */
     fun getParkingHistory(): Flow<List<ParkSpot>> = callbackFlow {
-        val uid = auth.currentUser?.uid
-        if (uid == null) {
+        val uid = currentUid ?: run {
             trySend(emptyList())
-            close()
             return@callbackFlow
         }
 
         val subscription = spotsCollection
             .whereEqualTo("user-id", uid)
-            // Jeśli chcesz sortować po dacie, odznacz poniższą linię (wymaga indeksu w Firebase)
-            // .orderBy("timestamp", Query.Direction.DESCENDING)
+            // .orderBy("timestamp", Query.Direction.DESCENDING) // Włącz, jeśli masz indeks
             .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    println("🔥 BŁĄD FIREBASE (Historia): ${error.message}")
-                    return@addSnapshotListener
-                }
+                if (error != null) return@addSnapshotListener
 
-                if (snapshot != null) {
-                    try {
-                        val spots = snapshot.toObjects(ParkSpot::class.java)
-                        println("🔥 Pobrano dokumentów: ${spots.size}")
-                        trySend(spots)
-                    } catch (e: Exception) {
-                        println("🔥 BŁĄD MAPOWANIA DANYCH: ${e.message}")
-                    }
-                }
+                val spots = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(ParkSpot::class.java)?.copy(id = doc.id)
+                } ?: emptyList()
+
+                trySend(spots)
             }
 
         awaitClose { subscription.remove() }
     }
 
-    /**
-     * Usuwa wpis o parkowaniu na podstawie jego ID.
-     */
     suspend fun deleteParkingSpot(documentId: String): Result<Unit> {
         return try {
             spotsCollection.document(documentId).delete().await()

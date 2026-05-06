@@ -1,8 +1,8 @@
 package com.ggs.parkuzpp.model
 
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,8 +28,21 @@ class HistoryViewModel : ViewModel() {
     private fun fetchHistory() {
         viewModelScope.launch {
             repository.getParkingHistory().collect { spots ->
-                // Sortowanie lokalne (od najnowszych), jeśli nie używamy orderBy w Firestore
                 _historyItems.value = spots.sortedByDescending { it.timestamp }
+            }
+        }
+    }
+
+    /**
+     * NOWOŚĆ: Aktywuje wybrany punkt z historii i przenosi użytkownika na mapę.
+     */
+    fun activateAndNavigateToMap(documentId: String, onNavigate: () -> Unit) {
+        viewModelScope.launch {
+            val result = repository.activateSpot(documentId)
+            if (result.isSuccess) {
+                onNavigate()
+            } else {
+                println("🔥 Błąd aktywacji punktu: ${result.exceptionOrNull()?.message}")
             }
         }
     }
@@ -48,12 +61,9 @@ class HistoryViewModel : ViewModel() {
     fun refresh() {
         viewModelScope.launch {
             _isRefreshing.value = true
-
             fetchHistory()
-
-            kotlinx.coroutines.delay(1000)
+            delay(1000)
             _isRefreshing.value = false
         }
     }
-
 }

@@ -234,7 +234,8 @@ fun MainScreen(
                 }
                 composable("history") {
                     HistoryScreen(
-                        onOpenMenu = { scope.launch { drawerState.open() } }
+                        onOpenMenu = { scope.launch { drawerState.open() } },
+                        onNavigateToMap = { bottomNavController.navigate("map") }
                     )
                 }
                 composable("password") {

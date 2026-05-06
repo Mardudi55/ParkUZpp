@@ -16,7 +16,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -28,53 +27,48 @@ import com.ggs.parkuzpp.location.UserTriggeredGPSService
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
-
-import com.google.android.gms.maps.GoogleMap
-import com.google.maps.android.compose.MapEffect
 import com.ggs.parkuzpp.location.MapUtils
 import com.ggs.parkuzpp.model.Coordinates
 import com.ggs.parkuzpp.model.ParkSpot
 import com.ggs.parkuzpp.model.ParkingRepository
 
-/**
- * A screen displaying a Google Maps instance, allowing the user to search for parking,
- * center the map on their current geographical location, and initiate the parking procedure.
- * * This composable automatically handles location permission requests upon entering the screen.
- * It also decodes the user's coordinates into a readable street address.
- *
- * @param onNavigateToCamera A callback triggered when the user presses the camera action button
- * to proceed with documenting the parking spot.
- */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, MapsComposeExperimentalApi::class)
 @Composable
 fun MapScreen(
-    onNavigateToCamera: () -> Unit
+    onNavigateToCamera: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val gps = remember { UserTriggeredGPSService(context) }
     val repository = remember { ParkingRepository() }
 
+    val activeSpot by repository.getActiveSpotFlow().collectAsState(initial = null)
+
     val unknownStreet = stringResource(R.string.map_unknown_street)
     val addressNotFound = stringResource(R.string.map_address_not_found)
     val errorAddress = stringResource(R.string.map_error_address)
     val locatingText = stringResource(R.string.map_locating)
 
-    var currentAddress by remember { mutableStateOf("Kliknij celownik, aby pobrać adres") }
-    var googleMap by remember { mutableStateOf<GoogleMap?>(null) }
+    var currentAddress by remember { mutableStateOf("Ładowanie lokalizacji...") }
+    var currentLocation by remember { mutableStateOf<LatLng?>(null) }
+
+    var googleMap by remember { mutableStateOf<com.google.android.gms.maps.GoogleMap?>(null) }
 
     var hasLocationPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
         )
     }
 
@@ -94,19 +88,14 @@ fun MapScreen(
         return withContext(Dispatchers.IO) {
             try {
                 val geocoder = Geocoder(context, Locale.getDefault())
-                @Suppress("DEPRECATION")
                 val addresses = geocoder.getFromLocation(lat, lng, 1)
-
                 if (!addresses.isNullOrEmpty()) {
                     val address = addresses[0]
                     val street = address.thoroughfare ?: unknownStreet
                     val number = address.subThoroughfare ?: ""
                     val city = address.locality ?: ""
-
                     if (number.isNotEmpty()) "$street $number, $city" else "$street, $city"
-                } else {
-                    addressNotFound
-                }
+                } else addressNotFound
             } catch (_: Exception) {
                 errorAddress
             }
@@ -120,52 +109,121 @@ fun MapScreen(
                 permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
     }
 
+    /**
+     * Fetch GPS once on start (only if no active spot)
+     */
     LaunchedEffect(Unit) {
-        if (!hasLocationPermission) {
-            permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+        if (hasLocationPermission && activeSpot == null) {
+            val location = gps.getCurrentLocation()
+            location?.let {
+                currentLocation = LatLng(it.latitude, it.longitude)
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngZoom(currentLocation!!, 17f)
+                )
+            }
+        }
+    }
+
+    /**
+     * Update address depending on state
+     */
+    LaunchedEffect(currentLocation, activeSpot) {
+        if (activeSpot != null) {
+            currentAddress = activeSpot!!.label
+        } else if (currentLocation != null) {
+            currentAddress = locatingText
+            currentAddress = getAddressFromLocation(
+                currentLocation!!.latitude,
+                currentLocation!!.longitude
+            )
+        }
+    }
+
+    /**
+     * Auto-focus when active spot changes
+     */
+    LaunchedEffect(activeSpot) {
+        activeSpot?.let { spot ->
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngZoom(
+                    LatLng(spot.coordinates.lat, spot.coordinates.lng), 17f
+                )
+            )
+        }
+    }
+
+    val markerState = remember(activeSpot) {
+        activeSpot?.let {
+            MarkerState(
+                position = LatLng(it.coordinates.lat, it.coordinates.lng)
+            )
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             properties = mapProperties,
-            uiSettings = mapUiSettings,
-            onMapLoaded = { /* Opcjonalnie: flaga, że mapa gotowa */ }
+            uiSettings = mapUiSettings
         ) {
-            MapEffect(Unit) { map ->
-                googleMap = map
+            MapEffect(Unit) { map -> googleMap = map }
+
+            markerState?.let {
+                Marker(
+                    state = it,
+                    title = "Tu zaparkowałeś",
+                    snippet = activeSpot?.label
+                )
             }
         }
+
         Column(
-            modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             Column(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+
+                /**
+                 * Center map ONLY (no geocoding!)
+                 */
                 Surface(
                     onClick = {
                         if (hasLocationPermission) {
                             scope.launch {
                                 val location = gps.getCurrentLocation()
-                                if (location != null) {
-                                    val userLatLng = LatLng(location.latitude, location.longitude)
-                                    cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(userLatLng, 17f))
-                                    currentAddress = locatingText
-                                    currentAddress = getAddressFromLocation(location.latitude, location.longitude)
+                                location?.let {
+                                    val userLatLng = LatLng(it.latitude, it.longitude)
+                                    cameraPositionState.animate(
+                                        CameraUpdateFactory.newLatLngZoom(userLatLng, 17f)
+                                    )
                                 }
                             }
                         } else {
-                            permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                            permissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
                         }
                     },
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.size(56.dp).shadow(4.dp, CircleShape)
+                    modifier = Modifier
+                        .size(56.dp)
+                        .shadow(4.dp, CircleShape)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -177,109 +235,83 @@ fun MapScreen(
                     }
                 }
 
-                Surface(
-                    onClick = onNavigateToCamera,
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(56.dp).shadow(6.dp, CircleShape)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = stringResource(R.string.desc_take_spot_photo),
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(30.dp)
-                        )
+                if (activeSpot == null) {
+                    Surface(
+                        onClick = onNavigateToCamera,
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .shadow(6.dp, CircleShape)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.CameraAlt, contentDescription = null)
+                        }
                     }
                 }
             }
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                shape = RoundedCornerShape(24.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = stringResource(R.string.map_selected_location),
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
 
-                        Surface(
-                            color = Color(0xFFE8F5E9),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.map_gps_status),
-                                color = Color(0xFF2E7D32),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+                    Text(
+                        text = if (activeSpot == null) "Wybrana lokalizacja" else "Aktywne parkowanie",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
 
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
                         text = currentAddress,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium
+                        color = MaterialTheme.colorScheme.primary
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(
-                        onClick = {
-                            googleMap?.snapshot { bitmap ->
-                                scope.launch {
-                                    if (bitmap != null) {
-                                        val uri = MapUtils.saveBitmapToFile(context, bitmap)
-
-                                        val newSpot = ParkSpot(
-                                            active = true,
-                                            label = currentAddress, // Używamy adresu pobranego przez Geocoder
-                                            photos = listOf(uri.toString()), // Zapisujemy lokalny URI jako String
-                                            coordinates = Coordinates(
-                                                lat = cameraPositionState.position.target.latitude,
-                                                lng = cameraPositionState.position.target.longitude
+                    if (activeSpot == null) {
+                        Button(
+                            onClick = {
+                                googleMap?.snapshot { bitmap ->
+                                    scope.launch {
+                                        bitmap?.let {
+                                            val uri = MapUtils.saveBitmapToFile(context, it)
+                                            val newSpot = ParkSpot(
+                                                active = true,
+                                                label = currentAddress,
+                                                photos = listOf(uri.toString()),
+                                                coordinates = Coordinates(
+                                                    lat = cameraPositionState.position.target.latitude,
+                                                    lng = cameraPositionState.position.target.longitude
+                                                )
                                             )
-                                        )
-
-                                        // 1. Opcjonalnie dezaktywujemy stare miejsca
-                                        repository.deactivatePreviousSpots()
-
-                                        // 2. Zapisujemy nowe miejsce
-                                        val result = repository.saveParkingSpot(newSpot)
-
-                                        if (result.isSuccess) {
-                                            // Pokaż Toast lub nawiguj do historii
-                                            println("Zaparkowano pomyślnie!")
-                                        } else {
-                                            println("Błąd zapisu: ${result.exceptionOrNull()?.message}")
+                                            repository.saveParkingSpot(newSpot)
                                         }
                                     }
                                 }
-                            }
-                        },                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(54.dp),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.btn_confirm_park),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(54.dp)
+                        ) {
+                            Text("ZAPARKUJ")
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    repository.deactivatePreviousSpots()
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(54.dp)
+                        ) {
+                            Text("ZAKOŃCZ PARKOWANIE")
+                        }
                     }
                 }
             }

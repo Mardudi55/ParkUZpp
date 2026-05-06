@@ -18,28 +18,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.model.HistoryViewModel
 import com.ggs.parkuzpp.model.ParkSpot
-import androidx.compose.ui.layout.ContentScale
-import coil.compose.AsyncImage
-import android.net.Uri
-import androidx.compose.ui.platform.LocalContext
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
     onOpenMenu: () -> Unit,
+    onNavigateToMap: () -> Unit,
     viewModel: HistoryViewModel = viewModel()
 ) {
-    // Nasłuchiwanie na dane z bazy oraz stan odświeżania z ViewModelu
     val historyItems by viewModel.historyItems.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
 
@@ -57,20 +56,19 @@ fun HistoryScreen(
                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
             )
 
-            // Wyszukiwarka
             TextField(
                 value = "",
                 onValueChange = {},
                 placeholder = {
                     Text(
-                        text = stringResource(R.string.search_placeholder), // Podmienione
+                        text = stringResource(R.string.search_placeholder),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 leadingIcon = {
                     Icon(
                         Icons.Default.Search,
-                        contentDescription = stringResource(R.string.search_placeholder), // Podmienione
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
@@ -82,24 +80,17 @@ fun HistoryScreen(
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                    unfocusedIndicatorColor = Color.Transparent
                 )
             )
 
-            // Implementacja gestu przeciągnij-by-odświeżyć
             PullToRefreshBox(
                 isRefreshing = isRefreshing,
                 onRefresh = { viewModel.refresh() },
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Wyświetlanie pustego stanu, jeśli nie ma żadnych zapisanych parkingów
                 if (historyItems.isEmpty() && !isRefreshing) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.TopCenter
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                         Text(
                             text = "Brak zapisanych lokalizacji",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -107,7 +98,6 @@ fun HistoryScreen(
                         )
                     }
                 } else {
-                    // Lista zapisanych lokalizacji
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         contentPadding = PaddingValues(bottom = 100.dp),
@@ -117,7 +107,11 @@ fun HistoryScreen(
                             HistoryItemCard(
                                 item = item,
                                 formattedDate = viewModel.formatDate(item.timestamp),
-                                onDeleteClick = { viewModel.deleteItem(item.id) }
+                                onDeleteClick = { viewModel.deleteItem(item.id) },
+                                onMapClick = {
+                                    // NOWOŚĆ: Aktywacja punktu i powrót do mapy
+                                    viewModel.activateAndNavigateToMap(item.id, onNavigateToMap)
+                                }
                             )
                         }
                     }
@@ -131,25 +125,21 @@ fun HistoryScreen(
 fun HistoryItemCard(
     item: ParkSpot,
     formattedDate: String,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    onMapClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(12.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             val photoString = item.photos.firstOrNull()
-            val context = LocalContext.current // Potrzebne do zbudowania żądania Coil
+            val context = LocalContext.current
 
             Box(
                 modifier = Modifier
@@ -159,31 +149,23 @@ fun HistoryItemCard(
                 contentAlignment = Alignment.Center
             ) {
                 if (!photoString.isNullOrEmpty()) {
-                    // Budujemy jawne żądanie (ImageRequest) na podstawie przekonwertowanego Uri
                     AsyncImage(
                         model = ImageRequest.Builder(context)
-                            .data(Uri.parse(photoString)) // Zamieniamy String z Firebase na natywne Uri pliku
-                            .crossfade(true) // Płynne pojawienie się zdjęcia
+                            .data(photoString.toUri())
+                            .crossfade(true)
                             .build(),
-                        contentDescription = "Zdjęcie zaparkowanego samochodu",
+                        contentDescription = "Zdjęcie parkingowe",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(
-                        Icons.Default.Map,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(32.dp)
-                    )
+                    Icon(Icons.Default.Map, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.label.ifEmpty { "Nieznana lokalizacja" },
                     fontWeight = FontWeight.Bold,
@@ -194,18 +176,9 @@ fun HistoryItemCard(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.CalendarToday,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = formattedDate,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(text = formattedDate, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -215,44 +188,25 @@ fun HistoryItemCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedButton(
-                        onClick = { /* TODO: Mapa */ },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(36.dp),
+                        onClick = onMapClick,
+                        modifier = Modifier.weight(1f).height(36.dp),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                         contentPadding = PaddingValues(0.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Map,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp)
-                        )
+                        Icon(Icons.Default.Map, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.btn_map), // Podmienione
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(text = stringResource(R.string.btn_map), color = MaterialTheme.colorScheme.primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
 
                     OutlinedButton(
                         onClick = onDeleteClick,
-                        modifier = Modifier
-                            .width(48.dp)
-                            .height(36.dp),
+                        modifier = Modifier.width(48.dp).height(36.dp),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f)),
                         contentPadding = PaddingValues(0.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.delete_desc), // Podmienione
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete_desc), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                     }
                 }
             }
