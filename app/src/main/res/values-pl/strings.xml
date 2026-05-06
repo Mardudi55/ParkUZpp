@@ -22,7 +22,6 @@
     <string name="placeholder_email">twoj@email.pl</string>
     <string name="label_password">Hasło</string>
     <string name="forgot_password">Zapomniałeś hasła?</string>
-    <string name="placeholder_password">••••••••</string>
     <string name="recaptcha_label">Nie jestem robotem</string>
     <string name="btn_login">Zaloguj się</string>
     <string name="no_account">Nie masz konta? </string>
@@ -41,7 +40,6 @@
     <string name="desc_center_me">Wyśrodkuj na mnie</string>
     <string name="desc_take_spot_photo">Zrób zdjęcie miejsca</string>
     <string name="map_selected_location">Wybrana lokalizacja</string>
-    <string name="map_gps_status">GPS OK</string>
     <string name="btn_confirm_park">Zatwierdź i Parkuj</string>
     <string name="menu_map">Mapa</string>
     <string name="menu_history">Historia</string>
@@ -56,6 +54,8 @@
     <string name="toast_register_success">Rejestracja OK</string>
     <string name="toast_register_error">Błąd rejestracji</string>
     <string name="already_have_account">Masz już konto? </string>
+    <string name="notification_bt_gps_access_title">Pobranie danych lokalizacji...</string>
+    <string name="notification_bt_gps_access_desc">Zapisywanie ostatniej znanje lokalizacji.</string>
     <string name="password_title">Zmiana hasła</string>
     <string name="password_subtitle">Wpisz poniżej swoje nowe hasło. Ze względów bezpieczeństwa musi ono zawierać co najmniej 6 znaków.</string>
     <string name="password_label_new">NOWE HASŁO</string>

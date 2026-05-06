@@ -22,7 +22,7 @@
     <string name="placeholder_email">your@email.com</string>
     <string name="label_password">Password</string>
     <string name="forgot_password">Forgot password?</string>
-    <string name="placeholder_password">••••••••</string>
+    <string name="placeholder_password" translatable="false">••••••••</string>
     <string name="recaptcha_label">I am not a robot</string>
     <string name="btn_login">Log In</string>
     <string name="no_account">Don\'t have an account? </string>
@@ -41,7 +41,7 @@
     <string name="desc_center_me">Center on me</string>
     <string name="desc_take_spot_photo">Take spot photo</string>
     <string name="map_selected_location">Selected Location</string>
-    <string name="map_gps_status">GPS OK</string>
+    <string name="map_gps_status" translatable="false">GPS OK</string>
     <string name="btn_confirm_park">Confirm and Park</string>
     <string name="menu_map">Map</string>
     <string name="menu_history">History</string>
@@ -56,6 +56,8 @@
     <string name="toast_register_success">Registration successful</string>
     <string name="toast_register_error">Registration error</string>
     <string name="already_have_account">Already have an account? </string>
+    <string name="notification_bt_gps_access_title">Accessing location...</string>
+    <string name="notification_bt_gps_access_desc">Saving last known location.</string>
     <string name="password_title">Change Password</string>
     <string name="password_subtitle">Enter your new password below. For security reasons, it must contain at least 6 characters.</string>
     <string name="password_label_new">NEW PASSWORD</string>
