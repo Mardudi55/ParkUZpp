@@ -1,25 +1,31 @@
 package com.ggs.parkuzpp
 
+import android.content.Context
 import android.net.Uri
 import com.ggs.parkuzpp.camera.CameraViewModel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import org.junit.Test
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
-import org.robolectric.annotation.Config
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+/**
+ * Unit tests for [CameraViewModel].
+ * Uses Robolectric for Android framework dependencies and Coroutines Test API
+ * for handling asynchronous operations and flows.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
@@ -48,29 +54,28 @@ class CameraViewModelTest {
         Assert.assertEquals(mockUri, viewModel.lastCapturedUri)
     }
 
-    // TODO: fix test
-    //@Test
-    //fun `confirmPhoto emits uri to photoSaved flow`() = runTest {
-    //    val mockUri = mock<Uri>()
-    //    val emittedUris = mutableListOf<Uri>()
+    @Test
+    fun `confirmPhoto emits signal to photoSaved flow`() = runTest {
+        val mockUri = mock<Uri>()
+        val mockContext = mock<Context>()
+        var signalEmitted = false
 
-    //    val job = launch(UnconfinedTestDispatcher(testScheduler)) {
-    //        viewModel.photoSaved.collect { emittedUris.add(it) }
-    //    }
+        val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.photoSaved.collect { signalEmitted = true }
+        }
 
-    //    viewModel.setCaptured(mockUri)
-    //    viewModel.confirmPhoto()
-    //    advanceUntilIdle()
+        viewModel.setCaptured(mockUri)
+        viewModel.confirmPhotoAndSave(mockContext)
+        advanceUntilIdle()
 
-    //    Assert.assertTrue(emittedUris.contains(mockUri))
-    //    job.cancel()
-    //}
+        Assert.assertTrue("Event should be emitted to photoSaved flow", signalEmitted)
+        job.cancel()
+    }
 
     @Test
     fun `discardPhoto clears lastCapturedUri`() {
         val mockUri = mock<Uri>()
         viewModel.setCaptured(mockUri)
-
         viewModel.discardPhoto()
 
         Assert.assertNull(viewModel.lastCapturedUri)
