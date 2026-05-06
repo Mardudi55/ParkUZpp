@@ -2,18 +2,16 @@
     <string name="app_name" translatable="false">ParkUZ++</string>
     <string name="could_not_get_location">Could not get location</string>
     <string name="no_location_yet">No location yet</string>
-    <string name="save_parking_spot" >Save parking spot</string>
+    <string name="save_parking_spot">Save parking spot</string>
     <string name="historia_parking_w">Parking History</string>
     <string name="camera_permission_denied">To use the camera, you must allow access to it.</string>
     <string name="nav_map">Map</string>
     <string name="nav_history">History</string>
     <string name="menu_desc">Menu</string>
     <string name="logo_desc">ParkUZ Logo</string>
-    <string name="take_photo">Take a photo</string>
     <string name="save_location">Save location</string>
     <string name="cancel">Cancel</string>
-    <string name="captured_photo_desc">Captured photo</string>
-    <string name="search_placeholder">Search location...</string>
+    <string name="search_placeholder">Search location…</string>
     <string name="btn_map">Map</string>
     <string name="delete_desc">Delete</string>
     <string name="login_welcome_back">Welcome Back</string>
@@ -34,7 +32,7 @@
     <string name="toast_logged_in">Logged in successfully</string>
     <string name="error_context">App context error</string>
     <string name="map_click_to_locate">Click crosshair to get address</string>
-    <string name="map_locating">Locating...</string>
+    <string name="map_locating">Locating…</string>
     <string name="map_unknown_street">Unknown street</string>
     <string name="map_address_not_found">Address not found at this location</string>
     <string name="map_error_address">Error fetching address</string>
@@ -56,7 +54,7 @@
     <string name="toast_register_success">Registration successful</string>
     <string name="toast_register_error">Registration error</string>
     <string name="already_have_account">Already have an account? </string>
-    <string name="notification_bt_gps_access_title">Accessing location...</string>
+    <string name="notification_bt_gps_access_title">Accessing location…</string>
     <string name="notification_bt_gps_access_desc">Saving last known location.</string>
     <string name="password_title">Change Password</string>
     <string name="password_subtitle">Enter your new password below. For security reasons, it must contain at least 6 characters.</string>
@@ -66,4 +64,23 @@
     <string name="password_toast_success">Password changed successfully</string>
     <string name="password_toast_error">Error: %1$s</string>
     <string name="password_btn_change">Change password</string>
+    <string name="error_no_auth">No authorization</string>
+    <string name="error_no_user">No user found</string>
+    <string name="map_loading_location">Loading location…</string>
+    <string name="map_marker_title">You parked here</string>
+    <string name="map_active_parking">Active parking</string>
+    <string name="map_btn_park">PARK</string>
+    <string name="map_btn_end_parking">END PARKING</string>
+    <string name="history_no_locations">No saved locations</string>
+    <string name="history_photo_desc">Parking photo</string>
+    <string name="history_unknown_location">Unknown location</string>
+    <string name="error_gps">Failed to fetch GPS location.</string>
+    <string name="error_db_save">Database save error</string>
+    <string name="error_unexpected">An unexpected error occurred</string>
+    <string name="address_unknown">Unknown address</string>
+    <string name="address_coordinates">Coordinates: %1$f, %2$f</string>
+    <string name="parked_successfully">Parked successfully!</string>
+    <string name="take_photo">Take photo</string>
+    <string name="saving">Saving…</string>
+    <string name="captured_photo_desc">Captured parking photo</string>
 </resources>

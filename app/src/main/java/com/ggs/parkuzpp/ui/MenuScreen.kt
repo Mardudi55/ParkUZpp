@@ -25,6 +25,18 @@ import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.ui.theme.ParkUZPrimaryOrange
 import com.ggs.parkuzpp.ui.theme.ParkUZStatusGreen
 
+/**
+ * Composable function that displays the side navigation menu (drawer).
+ * Provides navigation options, language selection, theme toggling, and app version info.
+ *
+ * @param currentRoute The currently active navigation route to highlight the selected menu item.
+ * @param isDarkTheme Indicates if the dark theme is currently active.
+ * @param onThemeChange Callback triggered to toggle between dark and light themes.
+ * @param onNavigate Callback triggered to navigate to a specific route.
+ * @param onLogout Callback triggered when the user clicks the logout button.
+ * @param currentLanguage The currently selected app language code (e.g., "en", "pl").
+ * @param onLanguageChange Callback triggered to update the app's language preference.
+ */
 @Composable
 fun MenuScreen(
     currentRoute: String? = null,
@@ -44,9 +56,6 @@ fun MenuScreen(
             .background(MaterialTheme.colorScheme.surface)
             .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
     ) {
-        // =========================================
-        // ZAKŁADKI NAWIGACJI
-        // =========================================
         DrawerMenuItem(
             text = stringResource(R.string.menu_map),
             icon = Icons.Default.Map,
@@ -64,7 +73,7 @@ fun MenuScreen(
         DrawerMenuItem(
             text = stringResource(R.string.menu_account),
             icon = Icons.Default.AccountCircle,
-            isSelected = currentRoute == "password", // <-- ZMIANA: Zaznacza gdy jesteś na zmianie hasła
+            isSelected = currentRoute == "password",
             onClick = { onNavigate("password") }
         )
 
@@ -73,9 +82,6 @@ fun MenuScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // =========================================
-        // USTAWIENIA: JĘZYK
-        // =========================================
         Text(
             text = stringResource(R.string.heading_language),
             fontSize = 11.sp,
@@ -127,9 +133,6 @@ fun MenuScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // =========================================
-        // USTAWIENIA: WYGLĄD
-        // =========================================
         Text(
             text = stringResource(R.string.heading_appearance),
             fontSize = 11.sp,
@@ -176,9 +179,6 @@ fun MenuScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // =========================================
-        // STOPKA
-        // =========================================
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -205,6 +205,14 @@ fun MenuScreen(
     }
 }
 
+/**
+ * A stylized single item within the navigation drawer.
+ *
+ * @param text The display label for the menu item.
+ * @param icon The vector icon representing the item.
+ * @param isSelected Determines if the item is currently active, applying highlighting styles.
+ * @param onClick Callback triggered when the item is pressed.
+ */
 @Composable
 fun DrawerMenuItem(
     text: String,

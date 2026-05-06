@@ -11,6 +11,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * ViewModel responsible for managing the state and business logic of the parking history screen.
+ */
 class HistoryViewModel : ViewModel() {
 
     private val repository = ParkingRepository()
@@ -34,7 +37,10 @@ class HistoryViewModel : ViewModel() {
     }
 
     /**
-     * NOWOŚĆ: Aktywuje wybrany punkt z historii i przenosi użytkownika na mapę.
+     * Activates a specific parking spot from the user's history and triggers navigation to the map.
+     *
+     * @param documentId The Firestore document ID of the parking spot to activate.
+     * @param onNavigate Callback executed upon successful activation to handle navigation.
      */
     fun activateAndNavigateToMap(documentId: String, onNavigate: () -> Unit) {
         viewModelScope.launch {
@@ -42,7 +48,7 @@ class HistoryViewModel : ViewModel() {
             if (result.isSuccess) {
                 onNavigate()
             } else {
-                println("🔥 Błąd aktywacji punktu: ${result.exceptionOrNull()?.message}")
+                println("🔥 Error activating spot: ${result.exceptionOrNull()?.message}")
             }
         }
     }

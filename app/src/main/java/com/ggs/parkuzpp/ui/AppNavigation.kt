@@ -36,13 +36,21 @@ import com.ggs.parkuzpp.camera.CameraController
 import com.ggs.parkuzpp.camera.CameraViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * Defines the main navigation graph for the application.
+ * Handles the routing between authentication, the main app experience, and camera functionalities.
+ *
+ * @param isDarkTheme Indicates if the dark theme is currently active.
+ * @param onThemeChange Callback to toggle the theme state.
+ * @param currentLanguage The currently selected app language code.
+ * @param onLanguageChange Callback to update the app's language.
+ */
 @Composable
 fun AppNavigation(
     isDarkTheme: Boolean,
     onThemeChange: (Boolean) -> Unit,
     currentLanguage: String,
     onLanguageChange: (String) -> Unit
-
 ) {
     val navController = rememberNavController()
     val authRepository = remember { com.ggs.parkuzpp.auth.AuthRepository() }
@@ -79,7 +87,7 @@ fun AppNavigation(
                 currentLanguage = currentLanguage,
                 onLanguageChange = onLanguageChange,
                 onNavigate = { route -> navController.navigate(route) },
-                onLogout = { /* logika wylogowania */ }
+                onLogout = { }
             )
         }
 
@@ -141,7 +149,7 @@ fun AppNavigation(
                 )
             } else {
                 Text(
-                    text = stringResource(id = R.string.camera_permission_denied),
+                    text = stringResource(R.string.camera_permission_denied),
                     color = MaterialTheme.colorScheme.onBackground
                 )
             }
@@ -149,6 +157,10 @@ fun AppNavigation(
     }
 }
 
+/**
+ * The core screen of the application containing a bottom navigation bar, top app bar, and a navigation drawer.
+ * Hosts a nested navigation controller for switching between map, history, and account views.
+ */
 @Composable
 fun MainScreen(
     isDarkTheme: Boolean,
@@ -248,6 +260,11 @@ fun MainScreen(
     }
 }
 
+/**
+ * A custom top application bar displaying a menu button, the application name, and the logo.
+ *
+ * @param onOpenMenu Callback triggered when the hamburger menu icon is clicked.
+ */
 @Composable
 fun CustomTopAppBar(onOpenMenu: () -> Unit) {
     Row(
@@ -262,13 +279,13 @@ fun CustomTopAppBar(onOpenMenu: () -> Unit) {
         IconButton(onClick = onOpenMenu) {
             Icon(
                 Icons.Default.Menu,
-                contentDescription = stringResource(id = R.string.menu_desc),
+                contentDescription = stringResource(R.string.menu_desc),
                 tint = MaterialTheme.colorScheme.primary
             )
         }
 
         Text(
-            text = "ParkUZ",
+            text = stringResource(R.string.app_name),
             color = MaterialTheme.colorScheme.primary,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold
@@ -276,7 +293,7 @@ fun CustomTopAppBar(onOpenMenu: () -> Unit) {
 
         Icon(
             painter = painterResource(id = R.drawable.ic_logo_withoutbg),
-            contentDescription = stringResource(id = R.string.logo_desc),
+            contentDescription = stringResource(R.string.logo_desc),
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape),
@@ -285,6 +302,12 @@ fun CustomTopAppBar(onOpenMenu: () -> Unit) {
     }
 }
 
+/**
+ * A custom bottom navigation bar for switching between main application sections.
+ *
+ * @param currentRoute The currently active route within the nested navigation controller.
+ * @param onNavigate Callback triggered when a navigation item is selected.
+ */
 @Composable
 fun CustomBottomNavBar(
     currentRoute: String?,
@@ -304,13 +327,13 @@ fun CustomBottomNavBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             CustomNavItem(
-                text = stringResource(id = R.string.nav_map),
+                text = stringResource(R.string.nav_map),
                 icon = Icons.Default.Map,
                 isSelected = currentRoute == "map",
                 onClick = { onNavigate("map") }
             )
             CustomNavItem(
-                text = stringResource(id = R.string.nav_history),
+                text = stringResource(R.string.nav_history),
                 icon = Icons.Default.History,
                 isSelected = currentRoute == "history",
                 onClick = { onNavigate("history") }
@@ -319,6 +342,14 @@ fun CustomBottomNavBar(
     }
 }
 
+/**
+ * A stylized single item within the bottom navigation bar.
+ *
+ * @param text The label for the navigation item.
+ * @param icon The visual icon for the navigation item.
+ * @param isSelected Determines if the item is currently active, changing its visual state.
+ * @param onClick Callback triggered when the item is pressed.
+ */
 @Composable
 fun CustomNavItem(
     text: String,

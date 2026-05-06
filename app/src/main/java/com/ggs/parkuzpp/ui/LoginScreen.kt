@@ -21,6 +21,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -35,8 +36,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.auth.AuthRepository
-import androidx.compose.ui.draw.clip
 
+/**
+ * Composable function that displays the login screen.
+ * Handles user authentication via email and password, recaptcha verification,
+ * and provides navigation to the map or registration screens.
+ *
+ * @param isDarkTheme Indicates if the dark theme is currently active.
+ * @param onThemeChange Callback triggered to toggle between dark and light themes.
+ * @param onNavigateToMap Callback to navigate to the main map screen upon successful login.
+ * @param onNavigateToRegister Callback to navigate to the registration screen.
+ * @param currentLanguage The currently selected app language code (e.g., "en", "pl").
+ * @param onLanguageChange Callback triggered to update the app's language preference.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
@@ -71,12 +83,13 @@ fun LoginScreen(
             .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- 1. Sekcja Logo ---
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_withoutbg),
                 contentDescription = stringResource(R.string.logo_desc),
-                modifier = Modifier.size(64.dp).padding(8.dp)
+                modifier = Modifier
+                    .size(64.dp)
+                    .padding(8.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -89,7 +102,6 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // --- 2. Główna Karta Logowania ---
         Card(
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -130,7 +142,10 @@ fun LoginScreen(
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
-                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), CircleShape),
+                                .background(
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                                    CircleShape
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -171,7 +186,7 @@ fun LoginScreen(
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium,
-                        modifier = Modifier.clickable { /* TODO: Reset */ }
+                        modifier = Modifier.clickable { /* Handle Password Reset */ }
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -229,13 +244,18 @@ fun LoginScreen(
                         isLoading = true
                         val activity = context as? Activity
                         if (activity != null) {
-                            authRepository.login(activity, emailTrimmed, passwordTrimmed) { success, error ->
+                            authRepository.login(
+                                activity,
+                                emailTrimmed,
+                                passwordTrimmed
+                            ) { success, error ->
                                 isLoading = false
                                 if (success) {
                                     Toast.makeText(context, loggedInMsg, Toast.LENGTH_SHORT).show()
                                     onNavigateToMap()
                                 } else {
-                                    Toast.makeText(context, "ERROR: $error", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "ERROR: $error", Toast.LENGTH_LONG)
+                                        .show()
                                 }
                             }
                         } else {
@@ -244,11 +264,17 @@ fun LoginScreen(
                         }
                     },
                     enabled = !isLoading,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text(stringResource(R.string.btn_login), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.btn_login),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -262,6 +288,7 @@ fun LoginScreen(
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                     )
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = stringResource(R.string.register_link),
                         fontSize = 11.sp,
@@ -277,7 +304,6 @@ fun LoginScreen(
         Spacer(modifier = Modifier.weight(1f))
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- 3. Ustawienia (Język i Dark Mode) ---
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -287,48 +313,43 @@ fun LoginScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(36.dp)
+                        .height(40.dp)
                         .border(1.dp, borderColor, RoundedCornerShape(8.dp))
                         .clip(RoundedCornerShape(8.dp))
                 ) {
-                    Row(
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp)
-                            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-                            .clip(RoundedCornerShape(8.dp))
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .background(if (currentLanguage == "en") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
+                            .clickable { onLanguageChange("en") },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .background(if (currentLanguage == "en") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
-                                .clickable { onLanguageChange("en") },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "EN",
-                                color = if (currentLanguage == "en") MaterialTheme.colorScheme.primary else textSecondaryColor,
-                                fontWeight = if (currentLanguage == "en") FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
+                        Text(
+                            text = "EN",
+                            color = if (currentLanguage == "en") MaterialTheme.colorScheme.primary else textSecondaryColor,
+                            fontWeight = if (currentLanguage == "en") FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
 
-                        Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(borderColor))
+                    Box(modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(borderColor))
 
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .background(if (currentLanguage == "pl") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
-                                .clickable { onLanguageChange("pl") },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "PL",
-                                color = if (currentLanguage == "pl") MaterialTheme.colorScheme.primary else textSecondaryColor,
-                                fontWeight = if (currentLanguage == "pl") FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .background(if (currentLanguage == "pl") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
+                            .clickable { onLanguageChange("pl") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "PL",
+                            color = if (currentLanguage == "pl") MaterialTheme.colorScheme.primary else textSecondaryColor,
+                            fontWeight = if (currentLanguage == "pl") FontWeight.Bold else FontWeight.Normal
+                        )
                     }
                 }
 
@@ -337,13 +358,21 @@ fun LoginScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            RoundedCornerShape(8.dp)
+                        )
                         .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Brightness4, contentDescription = null, tint = textSecondaryColor, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.Brightness4,
+                            contentDescription = null,
+                            tint = textSecondaryColor,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.dark_mode),
@@ -373,15 +402,34 @@ fun LoginScreen(
     }
 }
 
+/**
+ * A mock reCAPTCHA widget allowing the user to verify they are not a robot.
+ *
+ * @param isVerified The current verification state.
+ * @param onVerifyChange Callback triggered when the verification state changes.
+ */
 @Composable
 fun RecaptchaWidget(isVerified: Boolean, onVerifyChange: (Boolean) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)).padding(horizontal = 8.dp, vertical = 6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(checked = isVerified, onCheckedChange = { onVerifyChange(it) })
-        Text(text = stringResource(R.string.recaptcha_label), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            text = stringResource(R.string.recaptcha_label),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Spacer(modifier = Modifier.weight(1f))
-        Icon(Icons.Default.Refresh, contentDescription = null, tint = Color(0xFF4285F4), modifier = Modifier.size(24.dp))
+        Icon(
+            Icons.Default.Refresh,
+            contentDescription = null,
+            tint = Color(0xFF4285F4),
+            modifier = Modifier.size(24.dp)
+        )
     }
 }

@@ -37,6 +37,12 @@ import com.ggs.parkuzpp.model.Coordinates
 import com.ggs.parkuzpp.model.ParkSpot
 import com.ggs.parkuzpp.model.ParkingRepository
 
+/**
+ * Composable function that renders the main interactive map screen.
+ * Handles location permissions, user positioning, map interactions, and parking spot management.
+ *
+ * @param onNavigateToCamera Callback triggered when the user initiates capturing a photo of their spot.
+ */
 @OptIn(ExperimentalMaterial3Api::class, MapsComposeExperimentalApi::class)
 @Composable
 fun MapScreen(
@@ -53,8 +59,10 @@ fun MapScreen(
     val addressNotFound = stringResource(R.string.map_address_not_found)
     val errorAddress = stringResource(R.string.map_error_address)
     val locatingText = stringResource(R.string.map_locating)
+    val loadingLocation = stringResource(R.string.map_loading_location)
+    val markerTitle = stringResource(R.string.map_marker_title)
 
-    var currentAddress by remember { mutableStateOf("Ładowanie lokalizacji...") }
+    var currentAddress by remember { mutableStateOf(loadingLocation) }
     var currentLocation by remember { mutableStateOf<LatLng?>(null) }
 
     var googleMap by remember { mutableStateOf<com.google.android.gms.maps.GoogleMap?>(null) }
@@ -109,9 +117,6 @@ fun MapScreen(
                 permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
     }
 
-    /**
-     * Fetch GPS once on start (only if no active spot)
-     */
     LaunchedEffect(Unit) {
         if (hasLocationPermission && activeSpot == null) {
             val location = gps.getCurrentLocation()
@@ -124,9 +129,6 @@ fun MapScreen(
         }
     }
 
-    /**
-     * Update address depending on state
-     */
     LaunchedEffect(currentLocation, activeSpot) {
         if (activeSpot != null) {
             currentAddress = activeSpot!!.label
@@ -139,9 +141,6 @@ fun MapScreen(
         }
     }
 
-    /**
-     * Auto-focus when active spot changes
-     */
     LaunchedEffect(activeSpot) {
         activeSpot?.let { spot ->
             cameraPositionState.animate(
@@ -173,7 +172,7 @@ fun MapScreen(
             markerState?.let {
                 Marker(
                     state = it,
-                    title = "Tu zaparkowałeś",
+                    title = markerTitle,
                     snippet = activeSpot?.label
                 )
             }
@@ -195,9 +194,6 @@ fun MapScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
 
-                /**
-                 * Center map ONLY (no geocoding!)
-                 */
                 Surface(
                     onClick = {
                         if (hasLocationPermission) {
@@ -258,7 +254,7 @@ fun MapScreen(
                 Column(modifier = Modifier.padding(20.dp)) {
 
                     Text(
-                        text = if (activeSpot == null) "Wybrana lokalizacja" else "Aktywne parkowanie",
+                        text = if (activeSpot == null) stringResource(R.string.map_selected_location) else stringResource(R.string.map_active_parking),
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
@@ -297,7 +293,7 @@ fun MapScreen(
                                 .fillMaxWidth()
                                 .height(54.dp)
                         ) {
-                            Text("ZAPARKUJ")
+                            Text(stringResource(R.string.map_btn_park))
                         }
                     } else {
                         Button(
@@ -310,7 +306,7 @@ fun MapScreen(
                                 .fillMaxWidth()
                                 .height(54.dp)
                         ) {
-                            Text("ZAKOŃCZ PARKOWANIE")
+                            Text(stringResource(R.string.map_btn_end_parking))
                         }
                     }
                 }

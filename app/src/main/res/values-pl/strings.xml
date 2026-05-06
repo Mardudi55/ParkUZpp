@@ -2,7 +2,7 @@
 <resources>
     <string name="could_not_get_location">Nie udało się pobrać lokalizacji.</string>
     <string name="no_location_yet">Nie pobrano jeszcze lokalizacji.</string>
-    <string name="save_parking_spot" >Zapisz miejsce parkowania</string>
+    <string name="save_parking_spot">Zapisz miejsce parkowania</string>
     <string name="historia_parking_w">Historia Parkingów</string>
     <string name="camera_permission_denied">Aby użyć aparatu, musisz zezwolić na dostęp do niego.</string>
     <string name="nav_map">Mapa</string>
@@ -12,8 +12,7 @@
     <string name="take_photo">Zrób zdjęcie</string>
     <string name="save_location">Zapisz lokalizację</string>
     <string name="cancel">Anuluj</string>
-    <string name="captured_photo_desc">Zrobione zdjęcie</string>
-    <string name="search_placeholder">Szukaj lokalizacji...</string>
+    <string name="search_placeholder">Szukaj lokalizacji…</string>
     <string name="btn_map">Mapa</string>
     <string name="delete_desc">Usuń</string>
     <string name="login_welcome_back">Witaj ponownie</string>
@@ -33,7 +32,7 @@
     <string name="toast_logged_in">Zalogowano</string>
     <string name="error_context">Błąd kontekstu aplikacji</string>
     <string name="map_click_to_locate">Kliknij celownik, aby pobrać adres</string>
-    <string name="map_locating">Lokalizowanie...</string>
+    <string name="map_locating">Lokalizowanie…</string>
     <string name="map_unknown_street">Nieznana ulica</string>
     <string name="map_address_not_found">Nie znaleziono adresu w tej lokalizacji</string>
     <string name="map_error_address">Błąd pobierania adresu</string>
@@ -54,7 +53,7 @@
     <string name="toast_register_success">Rejestracja OK</string>
     <string name="toast_register_error">Błąd rejestracji</string>
     <string name="already_have_account">Masz już konto? </string>
-    <string name="notification_bt_gps_access_title">Pobranie danych lokalizacji...</string>
+    <string name="notification_bt_gps_access_title">Pobranie danych lokalizacji…</string>
     <string name="notification_bt_gps_access_desc">Zapisywanie ostatniej znanje lokalizacji.</string>
     <string name="password_title">Zmiana hasła</string>
     <string name="password_subtitle">Wpisz poniżej swoje nowe hasło. Ze względów bezpieczeństwa musi ono zawierać co najmniej 6 znaków.</string>
@@ -64,4 +63,22 @@
     <string name="password_toast_success">Hasło zostało zmienione</string>
     <string name="password_toast_error">Błąd: %1$s</string>
     <string name="password_btn_change">Zmień hasło</string>
+    <string name="error_no_auth">Brak autoryzacji</string>
+    <string name="error_no_user">Brak użytkownika</string>
+    <string name="map_loading_location">Ładowanie lokalizacji…</string>
+    <string name="map_marker_title">Tu zaparkowałeś</string>
+    <string name="map_active_parking">Aktywne parkowanie</string>
+    <string name="map_btn_park">ZAPARKUJ</string>
+    <string name="map_btn_end_parking">ZAKOŃCZ PARKOWANIE</string>
+    <string name="history_no_locations">Brak zapisanych lokalizacji</string>
+    <string name="history_photo_desc">Zdjęcie parkingowe</string>
+    <string name="history_unknown_location">Nieznana lokalizacja</string>
+    <string name="error_gps">Nie udało się pobrać lokalizacji GPS.</string>
+    <string name="error_db_save">Błąd zapisu do bazy</string>
+    <string name="error_unexpected">Wystąpił nieoczekiwany błąd</string>
+    <string name="address_unknown">Nieznany adres</string>
+    <string name="address_coordinates">Współrzędne: %1$f, %2$f</string>
+    <string name="parked_successfully">Zaparkowano pomyślnie!</string>
+    <string name="saving">Zapisywanie…</string>
+    <string name="captured_photo_desc">Zrobione zdjęcie parkingowe</string>
 </resources>

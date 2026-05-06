@@ -95,7 +95,7 @@ class CameraController(
     /**
      * Creates a newly timestamped file in the application's internal "images" directory.
      *
-     * @param context The context used to access the internal files directory.
+     * @param context The context used to access the internal files' directory.
      * @return A newly created [File] instance ready for image data output.
      */
     private fun createImageFile(context: Context): File {

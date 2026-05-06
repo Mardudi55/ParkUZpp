@@ -32,6 +32,17 @@ import androidx.compose.ui.unit.sp
 import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.auth.AuthRepository
 
+/**
+ * Composable function that displays the registration screen.
+ * Handles user input for email and passwords, recaptcha validation,
+ * and interacts with the [AuthRepository] to create a new account.
+ *
+ * @param isDarkTheme Indicates if the dark theme is currently active.
+ * @param onThemeChange Callback triggered to toggle between dark and light themes.
+ * @param onNavigateToLogin Callback to navigate back to the login screen.
+ * @param currentLanguage The currently selected app language code (e.g., "en", "pl").
+ * @param onLanguageChange Callback triggered to update the app's language preference.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
@@ -44,7 +55,6 @@ fun RegisterScreen(
     val context = LocalContext.current
     val authRepository = remember { AuthRepository() }
 
-    // --- STANY ---
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -68,12 +78,13 @@ fun RegisterScreen(
             .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- 1. Logo ---
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_withoutbg),
                 contentDescription = stringResource(R.string.logo_desc),
-                modifier = Modifier.size(64.dp).padding(8.dp)
+                modifier = Modifier
+                    .size(64.dp)
+                    .padding(8.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -86,7 +97,6 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- 2. Karta Rejestracji ---
         Card(
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -110,59 +120,125 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                Text(text = stringResource(R.string.label_email), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = stringResource(R.string.label_email),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 TextField(
                     value = email,
                     onValueChange = { email = it },
-                    placeholder = { Text(stringResource(R.string.placeholder_email), fontSize = 13.sp) },
+                    placeholder = {
+                        Text(
+                            stringResource(R.string.placeholder_email),
+                            fontSize = 13.sp
+                        )
+                    },
                     leadingIcon = {
-                        Box(modifier = Modifier.size(36.dp).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Email, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                                    CircleShape
+                                ), contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Email,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = TextFieldDefaults.colors(focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
                     singleLine = true
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                Text(text = stringResource(R.string.label_password), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = stringResource(R.string.label_password),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 TextField(
                     value = password,
                     onValueChange = { password = it },
-                    placeholder = { Text(stringResource(R.string.placeholder_password), fontSize = 13.sp) },
+                    placeholder = {
+                        Text(
+                            stringResource(R.string.placeholder_password),
+                            fontSize = 13.sp
+                        )
+                    },
                     visualTransformation = PasswordVisualTransformation(),
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), modifier = Modifier.size(18.dp)) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = TextFieldDefaults.colors(focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
                     singleLine = true
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                Text(text = stringResource(R.string.label_confirm_password), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = stringResource(R.string.label_confirm_password),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 TextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
-                    placeholder = { Text(stringResource(R.string.placeholder_password), fontSize = 13.sp) },
+                    placeholder = {
+                        Text(
+                            stringResource(R.string.placeholder_password),
+                            fontSize = 13.sp
+                        )
+                    },
                     visualTransformation = PasswordVisualTransformation(),
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), modifier = Modifier.size(18.dp)) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = TextFieldDefaults.colors(focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
                     singleLine = true
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // reCAPTCHA
-                RecaptchaWidget(isVerified = isRecaptchaVerified, onVerifyChange = { isRecaptchaVerified = it })
+                RecaptchaWidget(
+                    isVerified = isRecaptchaVerified,
+                    onVerifyChange = { isRecaptchaVerified = it })
 
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -192,21 +268,36 @@ fun RegisterScreen(
                                 Toast.makeText(context, regSuccessMsg, Toast.LENGTH_SHORT).show()
                                 onNavigateToLogin()
                             } else {
-                                Toast.makeText(context, error ?: regErrorMsg, Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, error ?: regErrorMsg, Toast.LENGTH_SHORT)
+                                    .show()
                             }
                         }
                     },
                     enabled = !isLoading,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(stringResource(R.string.register_link), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.register_link),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    Text(text = stringResource(R.string.already_have_account), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.already_have_account),
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = stringResource(R.string.btn_login),
                         fontSize = 11.sp,
@@ -222,7 +313,6 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.weight(1f))
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- 3. Ustawienia ---
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -250,7 +340,10 @@ fun RegisterScreen(
                             fontWeight = if (currentLanguage == "en") FontWeight.Bold else FontWeight.Normal
                         )
                     }
-                    Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(borderColor))
+                    Box(modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(borderColor))
 
                     Box(
                         modifier = Modifier
@@ -268,13 +361,37 @@ fun RegisterScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Brightness4, contentDescription = null, tint = textSecondaryColor, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.Brightness4,
+                            contentDescription = null,
+                            tint = textSecondaryColor,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = stringResource(R.string.dark_mode), fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
+                        Text(
+                            text = stringResource(R.string.dark_mode),
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 13.sp
+                        )
                     }
-                    Switch(checked = isDarkTheme, onCheckedChange = { onThemeChange(it) }, modifier = Modifier.scale(0.7f))
+                    Switch(
+                        checked = isDarkTheme,
+                        onCheckedChange = { onThemeChange(it) },
+                        modifier = Modifier.scale(0.7f)
+                    )
                 }
             }
         }

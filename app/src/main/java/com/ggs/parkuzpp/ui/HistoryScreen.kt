@@ -32,6 +32,14 @@ import com.ggs.parkuzpp.model.HistoryViewModel
 import com.ggs.parkuzpp.model.ParkSpot
 import androidx.core.net.toUri
 
+/**
+ * Composable function that displays the user's parking history.
+ * Allows pulling to refresh, searching (UI only), and viewing a list of previously saved parking spots.
+ *
+ * @param onOpenMenu Callback triggered to open the navigation drawer or menu.
+ * @param onNavigateToMap Callback triggered to navigate back to the main map screen.
+ * @param viewModel The [HistoryViewModel] managing the state for this screen.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
@@ -92,7 +100,7 @@ fun HistoryScreen(
                 if (historyItems.isEmpty() && !isRefreshing) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                         Text(
-                            text = "Brak zapisanych lokalizacji",
+                            text = stringResource(R.string.history_no_locations),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 32.dp)
                         )
@@ -109,7 +117,6 @@ fun HistoryScreen(
                                 formattedDate = viewModel.formatDate(item.timestamp),
                                 onDeleteClick = { viewModel.deleteItem(item.id) },
                                 onMapClick = {
-                                    // NOWOŚĆ: Aktywacja punktu i powrót do mapy
                                     viewModel.activateAndNavigateToMap(item.id, onNavigateToMap)
                                 }
                             )
@@ -121,6 +128,14 @@ fun HistoryScreen(
     }
 }
 
+/**
+ * Composable function representing a single parking spot card within the history list.
+ *
+ * @param item The [ParkSpot] data object containing location details and photos.
+ * @param formattedDate The formatted date string representing when the spot was saved.
+ * @param onDeleteClick Callback triggered when the user clicks the delete button.
+ * @param onMapClick Callback triggered when the user clicks the map button to activate the spot.
+ */
 @Composable
 fun HistoryItemCard(
     item: ParkSpot,
@@ -135,7 +150,9 @@ fun HistoryItemCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             val photoString = item.photos.firstOrNull()
@@ -154,7 +171,7 @@ fun HistoryItemCard(
                             .data(photoString.toUri())
                             .crossfade(true)
                             .build(),
-                        contentDescription = "Zdjęcie parkingowe",
+                        contentDescription = stringResource(R.string.history_photo_desc),
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -167,7 +184,7 @@ fun HistoryItemCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.label.ifEmpty { "Nieznana lokalizacja" },
+                    text = item.label.ifEmpty { stringResource(R.string.history_unknown_location) },
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onSurface
@@ -189,7 +206,9 @@ fun HistoryItemCard(
                 ) {
                     OutlinedButton(
                         onClick = onMapClick,
-                        modifier = Modifier.weight(1f).height(36.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(36.dp),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                         contentPadding = PaddingValues(0.dp)
@@ -201,7 +220,9 @@ fun HistoryItemCard(
 
                     OutlinedButton(
                         onClick = onDeleteClick,
-                        modifier = Modifier.width(48.dp).height(36.dp),
+                        modifier = Modifier
+                            .width(48.dp)
+                            .height(36.dp),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f)),
                         contentPadding = PaddingValues(0.dp)

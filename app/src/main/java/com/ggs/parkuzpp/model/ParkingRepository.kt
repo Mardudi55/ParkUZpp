@@ -6,23 +6,26 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import com.ggs.parkuzpp.R
 
 /**
- * Repozytorium zarządza danymi parkowania w Firestore.
- * System wspiera zasadę "Single Active Spot" – tylko jedno parkowanie na raz może być aktywne.
+ * Repository responsible for managing parking data within Firestore.
+ * Implements the "Single Active Spot" policy, ensuring only one parking spot is active at a time.
  */
 class ParkingRepository {
 
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
-    private val spotsCollection = firestore.collection("park-spots")
+    private val spotsCollection = firestore.collection(COLLECTION_PARK_SPOTS)
 
     private val currentUid: String?
         get() = auth.currentUser?.uid
 
     /**
-     * Strumień, który dostarcza JEDYNY aktywny punkt parkowania użytkownika.
-     * Używamy go na mapie do wyświetlania pinezki i sterowania przyciskiem.
+     * Provides a stream of the user's currently active parking spot.
+     * Yields null if no active spot exists or if the user is unauthenticated.
+     *
+     * @return A [Flow] emitting the single active [ParkSpot] or null.
      */
     fun getActiveSpotFlow(): Flow<ParkSpot?> = callbackFlow {
         val uid = currentUid ?: run {
@@ -31,8 +34,8 @@ class ParkingRepository {
         }
 
         val registration = spotsCollection
-            .whereEqualTo("user-id", uid)
-            .whereEqualTo("active", true)
+            .whereEqualTo(FIELD_USER_ID, uid)
+            .whereEqualTo(FIELD_ACTIVE, true)
             .limit(1)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) return@addSnapshotListener
@@ -47,10 +50,13 @@ class ParkingRepository {
     }
 
     /**
-     * Zapisuje nowe miejsce i automatycznie dezaktywuje wszystkie poprzednie.
+     * Saves a new parking spot and automatically deactivates all previously active spots.
+     *
+     * @param spot The [ParkSpot] to be saved.
+     * @return A [Result] indicating success or containing an exception on failure.
      */
     suspend fun saveParkingSpot(spot: ParkSpot): Result<Unit> {
-        val uid = currentUid ?: return Result.failure(Exception("Brak autoryzacji"))
+        val uid = currentUid ?: return Result.failure(Exception(R.string.error_no_auth.toString()))
 
         return try {
             deactivatePreviousSpots().getOrThrow()
@@ -65,12 +71,15 @@ class ParkingRepository {
     }
 
     /**
-     * Aktywuje konkretny punkt z historii (np. po kliknięciu "Mapa" w HistoryScreen).
+     * Activates a specific parking spot from the user's history.
+     *
+     * @param documentId The Firestore document ID of the parking spot to activate.
+     * @return A [Result] indicating success or containing an exception on failure.
      */
     suspend fun activateSpot(documentId: String): Result<Unit> {
         return try {
             deactivatePreviousSpots().getOrThrow()
-            spotsCollection.document(documentId).update("active", true).await()
+            spotsCollection.document(documentId).update(FIELD_ACTIVE, true).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -78,23 +87,24 @@ class ParkingRepository {
     }
 
     /**
-     * Ustawia active = false dla wszystkich punktów użytkownika.
-     * Wywoływane przy kliknięciu "Zakończ parkowanie" lub przed nowym zapisem.
+     * Deactivates all currently active parking spots for the authenticated user.
+     *
+     * @return A [Result] indicating success or containing an exception on failure.
      */
     suspend fun deactivatePreviousSpots(): Result<Unit> {
-        val uid = currentUid ?: return Result.failure(Exception("Brak użytkownika"))
+        val uid = currentUid ?: return Result.failure(Exception(R.string.error_no_user.toString()))
 
         return try {
             val activeSpots = spotsCollection
-                .whereEqualTo("user-id", uid)
-                .whereEqualTo("active", true)
+                .whereEqualTo(FIELD_USER_ID, uid)
+                .whereEqualTo(FIELD_ACTIVE, true)
                 .get()
                 .await()
 
             if (!activeSpots.isEmpty) {
                 firestore.runBatch { batch ->
                     for (doc in activeSpots.documents) {
-                        batch.update(doc.reference, "active", false)
+                        batch.update(doc.reference, FIELD_ACTIVE, false)
                     }
                 }.await()
             }
@@ -105,7 +115,10 @@ class ParkingRepository {
     }
 
     /**
-     * Pobiera całą historię. Mapuje ID dokumentów, aby działało usuwanie/aktywacja.
+     * Retrieves the complete parking history for the authenticated user.
+     * Maps document IDs to enable subsequent updates or deletions.
+     *
+     * @return A [Flow] emitting a list of [ParkSpot] items.
      */
     fun getParkingHistory(): Flow<List<ParkSpot>> = callbackFlow {
         val uid = currentUid ?: run {
@@ -114,8 +127,7 @@ class ParkingRepository {
         }
 
         val subscription = spotsCollection
-            .whereEqualTo("user-id", uid)
-            // .orderBy("timestamp", Query.Direction.DESCENDING) // Włącz, jeśli masz indeks
+            .whereEqualTo(FIELD_USER_ID, uid)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) return@addSnapshotListener
 
@@ -129,6 +141,12 @@ class ParkingRepository {
         awaitClose { subscription.remove() }
     }
 
+    /**
+     * Deletes a specific parking spot from Firestore.
+     *
+     * @param documentId The Firestore document ID of the parking spot to delete.
+     * @return A [Result] indicating success or containing an exception on failure.
+     */
     suspend fun deleteParkingSpot(documentId: String): Result<Unit> {
         return try {
             spotsCollection.document(documentId).delete().await()
@@ -136,5 +154,11 @@ class ParkingRepository {
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    companion object {
+        private const val COLLECTION_PARK_SPOTS = "park-spots"
+        private const val FIELD_USER_ID = "user-id"
+        private const val FIELD_ACTIVE = "active"
     }
 }
