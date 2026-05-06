@@ -201,6 +201,10 @@ fun MainScreen(
                         onOpenMenu = { scope.launch { drawerState.open() } }
                     )
                 }
+                composable("settings") {
+                    SettingsScreen()
+                }
+
             }
         }
     }

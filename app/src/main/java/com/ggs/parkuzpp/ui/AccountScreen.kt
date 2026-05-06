@@ -110,7 +110,7 @@ fun AccountScreen(
             text = "Settings",
             icon = Icons.Default.Settings,
             isSelected = currentRoute == "settings",
-            onClick = { /* TODO */ }
+            onClick = { onNavigate("settings") }
         )
 
         Spacer(modifier = Modifier.height(24.dp))

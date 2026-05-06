@@ -1,22 +1,33 @@
 package com.ggs.parkuzpp
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.*
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.ggs.parkuzpp.bluetooth.BluetoothController
+import com.ggs.parkuzpp.bluetooth.BluetoothUtils
 import com.ggs.parkuzpp.ui.AppNavigation
 import com.ggs.parkuzpp.ui.theme.ParkUZTheme
 import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.FirebaseAuth
-import androidx.compose.runtime.*
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var bluetoothController:
+            BluetoothController
+
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
 
         FirebaseApp.initializeApp(this)
-
         // TODO: Przenieść ten kod do testów
-        val auth = FirebaseAuth.getInstance()
+        /*val auth = FirebaseAuth.getInstance()
         auth.createUserWithEmailAndPassword("test123@test.com", "123456")
             .addOnSuccessListener {
                 println("REGISTER OK")
@@ -25,18 +36,36 @@ class MainActivity : ComponentActivity() {
                 println("REGISTER ERROR: ${e.message}")
             }
 
-        setContent {
-            // 1. Zmienna trzymająca stan motywu (żyje na samej górze apki)
-            var isDarkTheme by remember { mutableStateOf(false) }
+         */
+        bluetoothController =
+            BluetoothController(this)
 
-            // 2. Przekazujemy stan do globalnego motywu
-            ParkUZTheme(darkTheme = isDarkTheme) {
-                // 3. Przekazujemy stan i funkcję zmieniającą do nawigacji!
+        bluetoothController.start()
+
+        setContent {
+
+            var isDarkTheme by remember {
+                mutableStateOf(false)
+            }
+
+            ParkUZTheme(
+                darkTheme = isDarkTheme
+            ) {
+
                 AppNavigation(
                     isDarkTheme = isDarkTheme,
-                    onThemeChange = { isDarkTheme = it }
+                    onThemeChange = {
+                        isDarkTheme = it
+                    }
                 )
             }
         }
-        }
     }
+
+    override fun onDestroy() {
+
+        super.onDestroy()
+
+        bluetoothController.stop()
+    }
+}
