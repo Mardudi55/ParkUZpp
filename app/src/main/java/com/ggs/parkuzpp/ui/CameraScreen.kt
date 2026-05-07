@@ -41,17 +41,14 @@ fun CameraScreen(
 
     val successMessage = stringResource(R.string.parked_successfully)
 
-    // Listen for the success signal (saved to database)
     LaunchedEffect(Unit) {
         viewModel.photoSaved.collectLatest {
             Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
-            // Clears the UI state but leaves the file on disk for the history screen
             viewModel.clearUiState()
             onNavigateBack()
         }
     }
 
-    // Listen for error events (e.g., missing GPS, Firebase permission denied)
     LaunchedEffect(Unit) {
         viewModel.errorEvent.collectLatest { errorMessage ->
             Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
@@ -59,13 +56,11 @@ fun CameraScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Camera preview
         AndroidView(
             factory = { controller.previewView },
             modifier = Modifier.fillMaxSize()
         )
 
-        // Capture photo button
         Button(
             onClick = {
                 controller.takePhoto { uri ->
@@ -79,11 +74,9 @@ fun CameraScreen(
             Text(stringResource(R.string.take_photo))
         }
 
-        // Confirmation dialog for saving the location and photo
         if (capturedUri != null) {
             AlertDialog(
                 onDismissRequest = {
-                    // Deletes the file if dismissed by clicking outside
                     if (!isSaving) viewModel.discardPhoto()
                 },
                 confirmButton = {
@@ -98,7 +91,7 @@ fun CameraScreen(
                 },
                 dismissButton = {
                     TextButton(
-                        onClick = { viewModel.discardPhoto() }, // Deletes the file on "Cancel"
+                        onClick = { viewModel.discardPhoto() },
                         enabled = !isSaving
                     ) {
                         Text(stringResource(R.string.cancel))

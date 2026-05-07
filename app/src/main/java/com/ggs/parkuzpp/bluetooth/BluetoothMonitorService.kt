@@ -24,6 +24,8 @@ class BluetoothMonitorService : Service() {
     private var gpsService: BluetoothTriggeredGPSService? = null
     private var isBound = false
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var receiverRegistered = false
+
 
     private val locationConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, binder: IBinder) {
@@ -49,7 +51,10 @@ class BluetoothMonitorService : Service() {
         startForeground(1, createNotification())
 
         receiver = BluetoothReceiver { onCarDisconnected() }
-        registerReceiver(receiver, IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED))
+        if (!receiverRegistered) {
+            registerReceiver(receiver, IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED))
+            receiverRegistered = true
+        }
         bindService(
             Intent(this, BluetoothTriggeredGPSService::class.java),
             locationConnection,
@@ -90,7 +95,8 @@ class BluetoothMonitorService : Service() {
         val prefs = getSharedPreferences("locations", MODE_PRIVATE)
         prefs.edit {
             putString("last_lat", lat.toString())
-            .putString("last_lon", lon.toString()) }
+                .putString("last_lon", lon.toString())
+        }
     }
 
     private fun createNotification(): Notification {
@@ -113,9 +119,19 @@ class BluetoothMonitorService : Service() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        unregisterReceiver(receiver)
+
+        if (receiverRegistered) {
+            unregisterReceiver(receiver)
+            receiverRegistered = false
+        }
+        if (isBound) {
+            unbindService(locationConnection)
+            isBound = false
+        }
+
         scope.cancel()
+
+        super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
