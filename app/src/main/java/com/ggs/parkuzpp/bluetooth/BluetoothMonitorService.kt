@@ -5,20 +5,37 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.bluetooth.BluetoothDevice
+import android.content.ComponentName
+import android.content.Intent
 import android.content.IntentFilter
+import android.content.ServiceConnection
+import android.location.Location
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.ggs.parkuzpp.R
-import com.ggs.parkuzpp.location.UserTriggeredGPSService
 import kotlinx.coroutines.*
 import androidx.annotation.RequiresPermission
 import androidx.core.content.edit
+import com.ggs.parkuzpp.location.BluetoothTriggeredGPSService
 
 class BluetoothMonitorService : Service() {
     private lateinit var receiver: BluetoothReceiver
-    private lateinit var gpsService: UserTriggeredGPSService
+    private var gpsService: BluetoothTriggeredGPSService? = null
+    private var isBound = false
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    private val locationConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, binder: IBinder) {
+            gpsService = (binder as BluetoothTriggeredGPSService.LocationBinder).getService()
+            isBound = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            isBound = false
+            gpsService = null
+        }
+    }
 
     @RequiresPermission(
         anyOf = [
@@ -28,13 +45,16 @@ class BluetoothMonitorService : Service() {
     )
     override fun onCreate() {
         super.onCreate()
-
-        gpsService = UserTriggeredGPSService(this)
-
         createNotificationChannel()
         startForeground(1, createNotification())
+
         receiver = BluetoothReceiver { onCarDisconnected() }
         registerReceiver(receiver, IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED))
+        bindService(
+            Intent(this, BluetoothTriggeredGPSService::class.java),
+            locationConnection,
+            BIND_AUTO_CREATE
+        )
         Log.d("BT", "Bluetooth monitor started")
     }
 
@@ -48,19 +68,20 @@ class BluetoothMonitorService : Service() {
         Log.d("BT", "Getting location...")
 
         scope.launch {
-            try {
-                val location = gpsService.getCurrentLocation()
-                Log.d("BT", "Location result: $location")
+            if (isBound && gpsService != null) {
+                gpsService?.requestLocation(object : BluetoothTriggeredGPSService.LocationCallback {
+                    override fun onLocationReceived(location: Location) {
+                        saveLocation(location.latitude, location.longitude)
+                        // TODO: Save location to the DB
+                        Log.d("LOCATION", "Saved: ${location.latitude}, ${location.longitude}")
+                    }
 
-                if (location != null) {
-                    saveLocation(location.latitude, location.longitude)
-
-                    Log.d("LOCATION", "Saved: ${location.latitude}, ${location.longitude}")
-                } else {
-                    Log.d("LOCATION", "Location NULL")
-                }
-            } catch (e: Exception) {
-                Log.e("LOCATION", "ERROR: ${e.message}")
+                    override fun onLocationFailed() {
+                        Log.e("LOCATION", "Location request failed")
+                    }
+                })
+            } else {
+                Log.e("BT", "GPS service not bound")
             }
         }
     }
@@ -97,5 +118,5 @@ class BluetoothMonitorService : Service() {
         scope.cancel()
     }
 
-    override fun onBind(intent: android.content.Intent?): IBinder? = null
+    override fun onBind(intent: Intent?): IBinder? = null
 }
