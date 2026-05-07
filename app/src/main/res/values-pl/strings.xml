@@ -81,4 +81,6 @@
     <string name="parked_successfully">Zaparkowano pomyślnie!</string>
     <string name="saving">Zapisywanie…</string>
     <string name="captured_photo_desc">Zrobione zdjęcie parkingowe</string>
+    <string name="menu_settings">Ustawienia</string>
+
 </resources>

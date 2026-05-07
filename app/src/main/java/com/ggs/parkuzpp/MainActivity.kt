@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
+import com.ggs.parkuzpp.bluetooth.BluetoothController
 import com.ggs.parkuzpp.ui.AppNavigation
 import com.ggs.parkuzpp.ui.theme.ParkUZTheme
 import com.google.firebase.FirebaseApp
@@ -23,9 +24,18 @@ class MainActivity : ComponentActivity() {
         private const val DEFAULT_LANG = "pl"
     }
 
+
+    private lateinit var bluetoothController:
+            BluetoothController
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
+
+        bluetoothController =
+            BluetoothController(this)
+
+        bluetoothController.start()
 
         setContent {
             val prefs = remember { getSharedPreferences(PREFS_NAME, MODE_PRIVATE) }

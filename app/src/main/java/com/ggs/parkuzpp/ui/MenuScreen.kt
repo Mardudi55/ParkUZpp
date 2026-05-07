@@ -76,6 +76,12 @@ fun MenuScreen(
             isSelected = currentRoute == "password",
             onClick = { onNavigate("password") }
         )
+        DrawerMenuItem(
+            text = stringResource(R.string.menu_settings),
+            icon = Icons.Default.AccountCircle,
+            isSelected = currentRoute == "settings",
+            onClick = { onNavigate("settings") }
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
         HorizontalDivider(color = borderColor, thickness = 1.dp)
