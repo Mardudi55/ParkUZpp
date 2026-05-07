@@ -11,62 +11,33 @@ import androidx.annotation.RequiresPermission
 class BluetoothReceiver(
     private val onDisconnect: () -> Unit
 ) : BroadcastReceiver() {
-
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onReceive(
         context: Context,
         intent: Intent
     ) {
-
-        if (
-            intent.action ==
-            BluetoothDevice.ACTION_ACL_DISCONNECTED
-        ) {
-
-            val device: BluetoothDevice? =
-                intent.getParcelableExtra(
-                    BluetoothDevice.EXTRA_DEVICE
-                )
-
-            Log.d(
-                "BT",
-                "Disconnected device: ${device?.name}"
+        if (intent.action == BluetoothDevice.ACTION_ACL_DISCONNECTED) {
+            val device: BluetoothDevice? = intent.getParcelableExtra(
+                BluetoothDevice.EXTRA_DEVICE,
+                BluetoothDevice::class.java
             )
 
-            Log.d(
-                "BT",
-                "Disconnected address: ${device?.address}"
-            )
+            Log.d("BT", "Disconnected device: ${device?.name}")
 
-            val repository =
-                BluetoothRepository(context)
+            Log.d("BT", "Disconnected address: ${device?.address}")
 
-            val isKnownCar =
+            val repository = BluetoothRepository(context)
 
-                repository.isSavedCar(
-                    device?.address
-                )
+            val isKnownCar = repository.isSavedCar(device?.address)
 
-            Log.d(
-                "BT",
-                "Is known car: $isKnownCar"
-            )
+            Log.d("BT", "Is known car: $isKnownCar")
 
             if (isKnownCar) {
-
-                Log.d(
-                    "BT",
-                    "KNOWN CAR DISCONNECTED"
-                )
-
+                Log.d("BT", "KNOWN CAR DISCONNECTED")
                 onDisconnect()
 
             } else {
-
-                Log.d(
-                    "BT",
-                    "Ignored device"
-                )
+                Log.d("BT", "Ignored device")
             }
         }
     }

@@ -8,52 +8,39 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 object BluetoothPermissionManager {
+    private fun checkPermissions(activity: Activity): Boolean {
+        val bluetoothGranted = ContextCompat.checkSelfPermission(
+            activity,
+            Manifest.permission.BLUETOOTH_CONNECT
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val locationGranted = ContextCompat.checkSelfPermission(
+            activity,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val notifGranted = ContextCompat.checkSelfPermission(
+            activity,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+        return bluetoothGranted && locationGranted && notifGranted
+    }
 
     fun requestPermissions(
         activity: Activity,
-        onGranted: () -> Unit
-    ) {
-
-        if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-        ) {
-
-            val bluetoothGranted =
-
-                ContextCompat.checkSelfPermission(
-                    activity,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) == PackageManager.PERMISSION_GRANTED
-
-            val locationGranted =
-
-                ContextCompat.checkSelfPermission(
-                    activity,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-
-            if (
-                bluetoothGranted &&
-                locationGranted
-            ) {
-
-                onGranted()
-
-            } else {
-
-                ActivityCompat.requestPermissions(
-                    activity,
-                    arrayOf(
-                        Manifest.permission.BLUETOOTH_CONNECT,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ),
-                    1
-                )
-            }
-
-        } else {
-
-            onGranted()
+    ): Boolean {
+        if (!checkPermissions(activity)) {
+            ActivityCompat.requestPermissions(
+                activity,
+                arrayOf(
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ),
+                1
+            )
+            return checkPermissions(activity)
         }
+        return true
     }
 }

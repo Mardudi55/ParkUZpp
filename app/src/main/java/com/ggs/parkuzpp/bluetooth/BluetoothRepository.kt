@@ -1,54 +1,35 @@
 package com.ggs.parkuzpp.bluetooth
 
 import android.content.Context
+import androidx.core.content.edit
 
 class BluetoothRepository(
     context: Context
 ) {
+    private val prefs = context.getSharedPreferences("bluetooth_prefs", Context.MODE_PRIVATE)
 
-    private val prefs =
-        context.getSharedPreferences(
-            "bluetooth_prefs",
-            Context.MODE_PRIVATE
-        )
-
-    // SAVE NEW CAR
-
-    fun saveCar(
-
-        name: String,
-
-        address: String
-    ) {
-
-        prefs.edit()
-
-            .putString(
-                address,
-                name
-            )
-
-            .apply()
+    /**
+     * Save new car
+     */
+    fun saveCar(name: String, address: String) {
+        prefs.edit { putString(address, name) }
     }
 
-    // GET ALL SAVED CARS
-
-    fun getSavedCars():
-            List<SavedBluetoothDevice> {
-
+    /**
+     * Get all saved cars
+     */
+    fun getSavedCars(): List<SavedBluetoothDevice> {
         return prefs.all.map {
-
             SavedBluetoothDevice(
-
                 name = it.value.toString(),
-
                 address = it.key
             )
         }
     }
 
-    // CHECK IF DEVICE IS SAVED
-
+    /**
+     * Check if device is saved
+     */
     fun isSavedCar(
         address: String?
     ): Boolean {
@@ -56,25 +37,17 @@ class BluetoothRepository(
         return prefs.contains(address)
     }
 
-    // REMOVE ONE DEVICE
-
-    fun removeCar(
-        address: String
-    ) {
-
-        prefs.edit()
-
-            .remove(address)
-
-            .apply()
+    /**
+     * Remove one device
+     */
+    fun removeCar(address: String) {
+        prefs.edit { remove(address) }
     }
 
-    // REMOVE ALL DEVICES
-
+    /**
+     * Remove all devices
+     */
     fun clearCars() {
-
-        prefs.edit()
-            .clear()
-            .apply()
+        prefs.edit { clear() }
     }
 }
