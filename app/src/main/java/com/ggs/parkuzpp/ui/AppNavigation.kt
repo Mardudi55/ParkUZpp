@@ -66,7 +66,7 @@ fun AppNavigation(
                 currentLanguage = currentLanguage,
                 onLanguageChange = onLanguageChange,
                 onNavigateToMap = { navController.navigate("main") },
-                onNavigateToRegister = { navController.navigate("register")}
+                onNavigateToRegister = { navController.navigate("register") }
             )
         }
 
@@ -256,7 +256,9 @@ fun MainScreen(
                     )
                 }
                 composable("settings") {
-                    SettingsScreen()
+                    SettingsScreen(
+                        onBack = { bottomNavController.popBackStack() }
+                    )
                 }
 
             }

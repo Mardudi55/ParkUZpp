@@ -12,7 +12,9 @@ import com.ggs.parkuzpp.bluetooth.BluetoothRepository
 import com.ggs.parkuzpp.bluetooth.SavedBluetoothDevice
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    onBack: () -> Unit
+) {
 
     val context = LocalContext.current
 
