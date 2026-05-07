@@ -15,6 +15,14 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * A controller responsible for managing the CameraX lifecycle and use cases.
+ * It handles initializing the camera preview, binding it to the UI, and capturing photos.
+ *
+ * @property context The application or activity context.
+ * @property lifecycleOwner The lifecycle owner used to bind the camera's active state.
+ * @property previewView The UI surface where the live camera feed is displayed.
+ */
 class CameraController(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner,
@@ -23,6 +31,11 @@ class CameraController(
 
     private var imageCapture: ImageCapture? = null
 
+    /**
+     * Initializes the camera provider and binds the preview and image capture use cases
+     * to the provided [lifecycleOwner]. It defaults to the rear-facing camera and
+     * scales the preview to fit the center of the [previewView].
+     */
     fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
 
@@ -39,6 +52,7 @@ class CameraController(
 
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
             previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
+
             cameraProvider.unbindAll()
             cameraProvider.bindToLifecycle(
                 lifecycleOwner,
@@ -50,6 +64,12 @@ class CameraController(
         }, ContextCompat.getMainExecutor(context))
     }
 
+    /**
+     * Captures a single photo and saves it to the internal application storage.
+     *
+     * @param onResult A callback invoked when the capture process completes.
+     * It provides the [Uri] of the saved image on success, or null if an error occurred.
+     */
     fun takePhoto(onResult: (Uri?) -> Unit) {
         val imageCapture = imageCapture ?: return
 
@@ -72,6 +92,12 @@ class CameraController(
         )
     }
 
+    /**
+     * Creates a newly timestamped file in the application's internal "images" directory.
+     *
+     * @param context The context used to access the internal files' directory.
+     * @return A newly created [File] instance ready for image data output.
+     */
     private fun createImageFile(context: Context): File {
         val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault())
             .format(Date())

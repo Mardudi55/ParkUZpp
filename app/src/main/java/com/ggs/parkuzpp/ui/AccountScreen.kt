@@ -1,300 +1,157 @@
 package com.ggs.parkuzpp.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.border
-import androidx.compose.ui.draw.scale
-import com.ggs.parkuzpp.ui.theme.ParkUZPrimaryOrange
-import com.ggs.parkuzpp.ui.theme.ParkUZStatusGreen
+import com.ggs.parkuzpp.R
+import com.google.firebase.auth.FirebaseAuth
 
+/**
+ * Composable function that displays the account settings screen.
+ * Allows authenticated users to change their account password.
+ *
+ * @param onBack Callback triggered to navigate back to the previous screen.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountScreen(
-    currentRoute: String? = null,
-    isDarkTheme: Boolean,
-    onThemeChange: (Boolean) -> Unit,
-    onNavigate: (String) -> Unit = {},
-    onLogout: () -> Unit = {}
+    onBack: () -> Unit
 ) {
-    var selectedLanguage by remember { mutableStateOf("EN") }
+    val context = LocalContext.current
+    val user = FirebaseAuth.getInstance().currentUser
 
-    // Dynamiczne kolory pobierane z motywu
-    val borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-    val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
+    var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface) // Tło menu prosto z motywu
-            .padding(top = 48.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // =========================================
-        // PROFIL UŻYTKOWNIKA
-        // =========================================
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            // Awatar z kropką statusu
-            Box(contentAlignment = Alignment.BottomEnd) {
-                Box(
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text(
+                    text = stringResource(R.string.password_title),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.password_subtitle),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    lineHeight = 16.sp
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Text(
+                    text = stringResource(R.string.password_label_new),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                TextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    placeholder = {
+                        Text(stringResource(R.string.password_placeholder), fontSize = 13.sp)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                val errorLengthMsg = stringResource(R.string.password_toast_length)
+                val successMsg = stringResource(R.string.password_toast_success)
+                val errorTemplateMsg = stringResource(R.string.password_toast_error)
+
+                Button(
+                    onClick = {
+                        val trimmedPassword = password.trim()
+                        if (trimmedPassword.length < 6) {
+                            Toast.makeText(context, errorLengthMsg, Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        isLoading = true
+
+                        user?.updatePassword(trimmedPassword)
+                            ?.addOnSuccessListener {
+                                isLoading = false
+                                Toast.makeText(context, successMsg, Toast.LENGTH_SHORT).show()
+                                password = ""
+                            }
+                            ?.addOnFailureListener { exception ->
+                                isLoading = false
+                                val errorMsg =
+                                    errorTemplateMsg.format(exception.message ?: "Unknown error")
+                                Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+                            }
+                    },
+                    enabled = !isLoading,
                     modifier = Modifier
-                        .size(64.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant), // Placeholder zdjęcia zgodny z motywem
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
-                        tint = textSecondaryColor,
-                        modifier = Modifier.size(32.dp)
+                    Text(
+                        stringResource(R.string.password_btn_change),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column {
-                Text(
-                    text = "Alex Navigator",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ParkUZPrimaryOrange // Główny kolor zostaje
-                )
-            }
         }
-
-        Spacer(modifier = Modifier.height(40.dp))
-
-        // =========================================
-        // ZAKŁADKI NAWIGACJI
-        // =========================================
-        DrawerMenuItem(
-            text = "Map",
-            icon = Icons.Default.Map,
-            isSelected = currentRoute == "map",
-            onClick = { onNavigate("map") }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        DrawerMenuItem(
-            text = "History",
-            icon = Icons.Default.History,
-            isSelected = currentRoute == "history",
-            onClick = { onNavigate("history") }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        DrawerMenuItem(
-            text = "Account",
-            icon = Icons.Default.AccountCircle,
-            isSelected = currentRoute == "account",
-            onClick = { /* TODO */ }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        DrawerMenuItem(
-            text = "Settings",
-            icon = Icons.Default.Settings,
-            isSelected = currentRoute == "settings",
-            onClick = { onNavigate("settings") }
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-        HorizontalDivider(color = borderColor, thickness = 1.dp)
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // =========================================
-        // USTAWIENIA: JĘZYK
-        // =========================================
-        Text(
-            text = "LANGUAGE",
-            fontSize = 11.sp,
-            color = textSecondaryColor,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(40.dp)
-                .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-                .clip(RoundedCornerShape(8.dp))
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(if (selectedLanguage == "EN") MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable { selectedLanguage = "EN" },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "EN",
-                    color = if (selectedLanguage == "EN") ParkUZPrimaryOrange else textSecondaryColor,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
-                )
-            }
-            Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(borderColor))
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(if (selectedLanguage == "PL") MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable { selectedLanguage = "PL" },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "PL",
-                    color = if (selectedLanguage == "PL") ParkUZPrimaryOrange else textSecondaryColor,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // =========================================
-        // USTAWIENIA: WYGLĄD
-        // =========================================
-        Text(
-            text = "APPEARANCE",
-            fontSize = 11.sp,
-            color = textSecondaryColor,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)) // Tło kafelka z przełącznikiem
-                .padding(horizontal = 16.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.Brightness4,
-                    contentDescription = null,
-                    tint = textSecondaryColor,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Dark Mode",
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface, // Zależne od motywu
-                    fontSize = 14.sp
-                )
-            }
-            Switch(
-                checked = isDarkTheme,
-                onCheckedChange = { onThemeChange(it) },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = ParkUZPrimaryOrange,
-                    uncheckedThumbColor = textSecondaryColor,
-                    uncheckedTrackColor = borderColor
-                ),
-                modifier = Modifier.scale(0.8f)
-            )
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // =========================================
-        // STOPKA
-        // =========================================
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(ParkUZStatusGreen))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "V1.0.4",
-                    fontSize = 11.sp,
-                    color = textSecondaryColor,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            IconButton(onClick = onLogout) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ExitToApp,
-                    contentDescription = "Wyloguj",
-                    tint = textSecondaryColor
-                )
-            }
-        }
-    }
-}
-
-// Komponent pomocniczy dla zakładki w menu
-@Composable
-fun DrawerMenuItem(
-    text: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val bgColor = if (isSelected) ParkUZPrimaryOrange.copy(alpha = 0.08f) else Color.Transparent
-
-    // Dynamiczny kolor tekstu ikonek: pomarańczowy jeśli zaznaczone, szarawy (z motywu) jeśli nie
-    val contentColor = if (isSelected) ParkUZPrimaryOrange else MaterialTheme.colorScheme.onSurfaceVariant
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Lewy, pomarańczowy pasek zaznaczenia
-        Box(
-            modifier = Modifier
-                .width(4.dp)
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp))
-                .background(if (isSelected) ParkUZPrimaryOrange else Color.Transparent)
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Icon(
-            imageVector = icon,
-            contentDescription = text,
-            tint = contentColor,
-            modifier = Modifier.size(22.dp)
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Text(
-            text = text,
-            color = contentColor,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            fontSize = 15.sp
-        )
     }
 }

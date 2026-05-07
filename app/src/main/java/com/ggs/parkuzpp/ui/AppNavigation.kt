@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,21 +36,37 @@ import com.ggs.parkuzpp.camera.CameraController
 import com.ggs.parkuzpp.camera.CameraViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * Defines the main navigation graph for the application.
+ * Handles the routing between authentication, the main app experience, and camera functionalities.
+ *
+ * @param isDarkTheme Indicates if the dark theme is currently active.
+ * @param onThemeChange Callback to toggle the theme state.
+ * @param currentLanguage The currently selected app language code.
+ * @param onLanguageChange Callback to update the app's language.
+ */
 @Composable
-fun AppNavigation(isDarkTheme: Boolean, onThemeChange: (Boolean) -> Unit) {
+fun AppNavigation(
+    isDarkTheme: Boolean,
+    onThemeChange: (Boolean) -> Unit,
+    currentLanguage: String,
+    onLanguageChange: (String) -> Unit
+) {
     val navController = rememberNavController()
+    val authRepository = remember { com.ggs.parkuzpp.auth.AuthRepository() }
 
-    NavHost(navController = navController, startDestination = "login") {
+    NavHost(
+        navController = navController,
+        startDestination = if (authRepository.isUserLoggedIn()) "main" else "login"
+    ) {
         composable("login") {
             LoginScreen(
-                isDarkTheme = isDarkTheme,       // <-- DODANE: Przekazanie stanu motywu
-                onThemeChange = onThemeChange,   // <-- DODANE: Przekazanie funkcji zmiany motywu
-                onNavigateToMap = {
-                    navController.navigate("main") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                },
-                onNavigateToRegister = { navController.navigate("register") }
+                isDarkTheme = isDarkTheme,
+                onThemeChange = onThemeChange,
+                currentLanguage = currentLanguage,
+                onLanguageChange = onLanguageChange,
+                onNavigateToMap = { navController.navigate("main") },
+                onNavigateToRegister = { navController.navigate("register")}
             )
         }
 
@@ -57,7 +74,20 @@ fun AppNavigation(isDarkTheme: Boolean, onThemeChange: (Boolean) -> Unit) {
             RegisterScreen(
                 isDarkTheme = isDarkTheme,
                 onThemeChange = onThemeChange,
+                currentLanguage = currentLanguage,
+                onLanguageChange = onLanguageChange,
                 onNavigateToLogin = { navController.popBackStack() }
+            )
+        }
+
+        composable("account") {
+            MenuScreen(
+                isDarkTheme = isDarkTheme,
+                onThemeChange = onThemeChange,
+                currentLanguage = currentLanguage,
+                onLanguageChange = onLanguageChange,
+                onNavigate = { route -> navController.navigate(route) },
+                onLogout = { }
             )
         }
 
@@ -65,11 +95,15 @@ fun AppNavigation(isDarkTheme: Boolean, onThemeChange: (Boolean) -> Unit) {
             MainScreen(
                 isDarkTheme = isDarkTheme,
                 onThemeChange = onThemeChange,
+                currentLanguage = currentLanguage,
+                onLanguageChange = onLanguageChange,
                 onLogout = {
+                    authRepository.logout()
                     navController.navigate("login") {
                         popUpTo("main") { inclusive = true }
                     }
-                }
+                },
+                onNavigateToCamera = { navController.navigate("camera") }
             )
         }
 
@@ -110,11 +144,12 @@ fun AppNavigation(isDarkTheme: Boolean, onThemeChange: (Boolean) -> Unit) {
 
                 CameraScreen(
                     viewModel = viewModel,
-                    controller = controller
+                    controller = controller,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             } else {
                 Text(
-                    text = "Aby użyć aparatu, musisz zezwolić na dostęp do niego.",
+                    text = stringResource(R.string.camera_permission_denied),
                     color = MaterialTheme.colorScheme.onBackground
                 )
             }
@@ -122,11 +157,18 @@ fun AppNavigation(isDarkTheme: Boolean, onThemeChange: (Boolean) -> Unit) {
     }
 }
 
+/**
+ * The core screen of the application containing a bottom navigation bar, top app bar, and a navigation drawer.
+ * Hosts a nested navigation controller for switching between map, history, and account views.
+ */
 @Composable
 fun MainScreen(
     isDarkTheme: Boolean,
     onThemeChange: (Boolean) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToCamera: () -> Unit,
+    currentLanguage: String,
+    onLanguageChange: (String) -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -137,20 +179,25 @@ fun MainScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = drawerState.isOpen || currentRoute != "map",
         drawerContent = {
             ModalDrawerSheet(
                 modifier = Modifier.width(320.dp),
                 drawerContainerColor = MaterialTheme.colorScheme.surface
             ) {
-                AccountScreen(
+                MenuScreen(
                     currentRoute = currentRoute,
                     isDarkTheme = isDarkTheme,
                     onThemeChange = onThemeChange,
+                    currentLanguage = currentLanguage,
+                    onLanguageChange = onLanguageChange,
                     onNavigate = { route ->
                         scope.launch { drawerState.close() }
                         if (currentRoute != route) {
                             bottomNavController.navigate(route) {
-                                popUpTo(bottomNavController.graph.startDestinationId) { saveState = true }
+                                popUpTo(bottomNavController.graph.startDestinationId) {
+                                    saveState = true
+                                }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -176,7 +223,9 @@ fun MainScreen(
                     onNavigate = { route ->
                         if (currentRoute != route) {
                             bottomNavController.navigate(route) {
-                                popUpTo(bottomNavController.graph.startDestinationId) { saveState = true }
+                                popUpTo(bottomNavController.graph.startDestinationId) {
+                                    saveState = true
+                                }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -192,13 +241,18 @@ fun MainScreen(
             ) {
                 composable("map") {
                     MapScreen(
-                        onOpenMenu = { scope.launch { drawerState.open() } },
-                        onNavigateToCamera = { /* Nawigacja kamery */ }
+                        onNavigateToCamera = onNavigateToCamera
                     )
                 }
                 composable("history") {
                     HistoryScreen(
-                        onOpenMenu = { scope.launch { drawerState.open() } }
+                        onOpenMenu = { scope.launch { drawerState.open() } },
+                        onNavigateToMap = { bottomNavController.navigate("map") }
+                    )
+                }
+                composable("password") {
+                    AccountScreen(
+                        onBack = { bottomNavController.popBackStack() }
                     )
                 }
                 composable("settings") {
@@ -210,10 +264,11 @@ fun MainScreen(
     }
 }
 
-// =========================================
-// CUSTOMOWE KOMPONENTY PASEK GÓRNY I DOLNY
-// =========================================
-
+/**
+ * A custom top application bar displaying a menu button, the application name, and the logo.
+ *
+ * @param onOpenMenu Callback triggered when the hamburger menu icon is clicked.
+ */
 @Composable
 fun CustomTopAppBar(onOpenMenu: () -> Unit) {
     Row(
@@ -226,11 +281,15 @@ fun CustomTopAppBar(onOpenMenu: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         IconButton(onClick = onOpenMenu) {
-            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.primary)
+            Icon(
+                Icons.Default.Menu,
+                contentDescription = stringResource(R.string.menu_desc),
+                tint = MaterialTheme.colorScheme.primary
+            )
         }
 
         Text(
-            text = "ParkUZ",
+            text = stringResource(R.string.app_name),
             color = MaterialTheme.colorScheme.primary,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold
@@ -238,7 +297,7 @@ fun CustomTopAppBar(onOpenMenu: () -> Unit) {
 
         Icon(
             painter = painterResource(id = R.drawable.ic_logo_withoutbg),
-            contentDescription = "ParkUZ Logo",
+            contentDescription = stringResource(R.string.logo_desc),
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape),
@@ -247,6 +306,12 @@ fun CustomTopAppBar(onOpenMenu: () -> Unit) {
     }
 }
 
+/**
+ * A custom bottom navigation bar for switching between main application sections.
+ *
+ * @param currentRoute The currently active route within the nested navigation controller.
+ * @param onNavigate Callback triggered when a navigation item is selected.
+ */
 @Composable
 fun CustomBottomNavBar(
     currentRoute: String?,
@@ -266,13 +331,13 @@ fun CustomBottomNavBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             CustomNavItem(
-                text = "Map",
+                text = stringResource(R.string.nav_map),
                 icon = Icons.Default.Map,
                 isSelected = currentRoute == "map",
                 onClick = { onNavigate("map") }
             )
             CustomNavItem(
-                text = "History",
+                text = stringResource(R.string.nav_history),
                 icon = Icons.Default.History,
                 isSelected = currentRoute == "history",
                 onClick = { onNavigate("history") }
@@ -281,6 +346,14 @@ fun CustomBottomNavBar(
     }
 }
 
+/**
+ * A stylized single item within the bottom navigation bar.
+ *
+ * @param text The label for the navigation item.
+ * @param icon The visual icon for the navigation item.
+ * @param isSelected Determines if the item is currently active, changing its visual state.
+ * @param onClick Callback triggered when the item is pressed.
+ */
 @Composable
 fun CustomNavItem(
     text: String,
@@ -289,7 +362,8 @@ fun CustomNavItem(
     onClick: () -> Unit
 ) {
     val bgColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+    val contentColor =
+        if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
 
     Column(
         modifier = Modifier

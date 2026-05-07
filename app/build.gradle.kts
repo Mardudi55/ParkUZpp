@@ -1,3 +1,12 @@
+import java.util.Properties
+
+val properties = Properties()
+val localPropertiesFile = project.rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    properties.load(localPropertiesFile.inputStream())
+}
+val mapsApiKey = properties.getProperty("MAPS_API") ?: ""
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -16,6 +25,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["env.MAPS_API"] = mapsApiKey
     }
 
     buildTypes {
@@ -57,22 +67,31 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
     implementation(platform(libs.androidx.compose.bom))
+
     implementation(libs.navigation.compose)
     implementation(libs.play.services.location)
     implementation(libs.coil.compose)
     implementation(libs.guava)
-    implementation(libs.androidx.navigation.fragment.ktx)
-    implementation(libs.androidx.navigation.ui.ktx)
+
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+
+
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
-    implementation(platform(libs.firebase.bom))
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.firebase.appcheck.playintegrity)
-    implementation(libs.androidx.material.icons.extended)
+    implementation(platform(libs.firebase.bom))
+
+    implementation(libs.maps.compose)
+    implementation(libs.play.services.maps)
+    implementation(libs.play.services.location)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

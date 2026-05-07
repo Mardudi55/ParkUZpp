@@ -1,5 +1,6 @@
 package com.ggs.parkuzpp.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.AlertDialog
@@ -7,27 +8,64 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.rememberAsyncImagePainter
+import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.camera.CameraController
 import com.ggs.parkuzpp.camera.CameraViewModel
+import kotlinx.coroutines.flow.collectLatest
 
+/**
+ * Composable screen that integrates the camera preview and allows the user to capture
+ * a photo to save their parking location.
+ *
+ * @param viewModel The [CameraViewModel] managing state and business logic for the camera.
+ * @param controller The [CameraController] handling the CameraX lifecycle and image capture.
+ * @param onNavigateBack Callback to navigate back to the previous screen (e.g., the map) after saving.
+ */
 @Composable
 fun CameraScreen(
     viewModel: CameraViewModel,
-    controller: CameraController
+    controller: CameraController,
+    onNavigateBack: () -> Unit
 ) {
     val capturedUri = viewModel.lastCapturedUri
+    val isSaving = viewModel.isSaving
+    val context = LocalContext.current
+
+    val successMessage = stringResource(R.string.parked_successfully)
+
+    // Listen for the success signal (saved to database)
+    LaunchedEffect(Unit) {
+        viewModel.photoSaved.collectLatest {
+            Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+            // Clears the UI state but leaves the file on disk for the history screen
+            viewModel.clearUiState()
+            onNavigateBack()
+        }
+    }
+
+    // Listen for error events (e.g., missing GPS, Firebase permission denied)
+    LaunchedEffect(Unit) {
+        viewModel.errorEvent.collectLatest { errorMessage ->
+            Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // Camera preview
         AndroidView(
             factory = { controller.previewView },
             modifier = Modifier.fillMaxSize()
         )
 
+        // Capture photo button
         Button(
             onClick = {
                 controller.takePhoto { uri ->
@@ -38,31 +76,38 @@ fun CameraScreen(
                 .align(Alignment.BottomCenter)
                 .padding(32.dp)
         ) {
-            Text("Zrób zdjęcie")
+            Text(stringResource(R.string.take_photo))
         }
 
+        // Confirmation dialog for saving the location and photo
         if (capturedUri != null) {
             AlertDialog(
-                onDismissRequest = { viewModel.discardPhoto() },
+                onDismissRequest = {
+                    // Deletes the file if dismissed by clicking outside
+                    if (!isSaving) viewModel.discardPhoto()
+                },
                 confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.confirmPhoto()
-                        viewModel.discardPhoto()
-                    }) {
-                        Text("Zapisz lokalizację")
+                    TextButton(
+                        onClick = @androidx.annotation.RequiresPermission(allOf = [android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION]) {
+                            viewModel.confirmPhotoAndSave(context)
+                        },
+                        enabled = !isSaving
+                    ) {
+                        Text(if (isSaving) stringResource(R.string.saving) else stringResource(R.string.save_location))
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = {
-                        viewModel.discardPhoto()
-                    }) {
-                        Text("Anuluj")
+                    TextButton(
+                        onClick = { viewModel.discardPhoto() }, // Deletes the file on "Cancel"
+                        enabled = !isSaving
+                    ) {
+                        Text(stringResource(R.string.cancel))
                     }
                 },
                 text = {
                     Image(
                         painter = rememberAsyncImagePainter(capturedUri),
-                        contentDescription = "Zrobione zdjęcie",
+                        contentDescription = stringResource(R.string.captured_photo_desc),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

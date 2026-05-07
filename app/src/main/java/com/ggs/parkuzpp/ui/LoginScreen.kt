@@ -21,10 +21,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -34,31 +36,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.auth.AuthRepository
-import androidx.compose.ui.draw.clip
 
+/**
+ * Composable function that displays the login screen.
+ * Handles user authentication via email and password, recaptcha verification,
+ * and provides navigation to the map or registration screens.
+ *
+ * @param isDarkTheme Indicates if the dark theme is currently active.
+ * @param onThemeChange Callback triggered to toggle between dark and light themes.
+ * @param onNavigateToMap Callback to navigate to the main map screen upon successful login.
+ * @param onNavigateToRegister Callback to navigate to the registration screen.
+ * @param currentLanguage The currently selected app language code (e.g., "en", "pl").
+ * @param onLanguageChange Callback triggered to update the app's language preference.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     isDarkTheme: Boolean,
     onThemeChange: (Boolean) -> Unit,
     onNavigateToMap: () -> Unit,
-    onNavigateToRegister: () -> Unit
+    onNavigateToRegister: () -> Unit,
+    currentLanguage: String,
+    onLanguageChange: (String) -> Unit
 ) {
     val context = LocalContext.current
     val authRepository = remember { AuthRepository() }
 
-    // --- STANY ---
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var isRecaptchaVerified by remember { mutableStateOf(false) }
-    var selectedLanguage by remember { mutableStateOf("EN") }
 
-    // --- KOLORY POMOCNICZE DLA WIDŻETÓW ---
+    val fillDataMsg = stringResource(R.string.toast_fill_data)
+    val verifyRobotMsg = stringResource(R.string.toast_verify_robot)
+    val loggedInMsg = stringResource(R.string.toast_logged_in)
+    val contextErrorMsg = stringResource(R.string.error_context)
+
     val borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
     val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
 
-    // Główny kontener z tłem z motywu aplikacji
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -67,20 +83,15 @@ fun LoginScreen(
             .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- 1. Sekcja Logo i Nazwa Aplikacji ---
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_withoutbg),
-                contentDescription = "ParkUZ Logo",
+                contentDescription = stringResource(R.string.logo_desc),
                 modifier = Modifier
                     .size(64.dp)
                     .padding(8.dp)
             )
-
             Spacer(modifier = Modifier.height(8.dp))
-
             Text(
                 text = "ParkUZ",
                 fontSize = 28.sp,
@@ -91,28 +102,22 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // --- 2. Główna Karta Logowania ---
         Card(
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp)
-            ) {
-                // Nagłówek w karcie
+            Column(modifier = Modifier.padding(24.dp)) {
                 Text(
-                    text = "Witaj ponownie",
+                    text = stringResource(R.string.login_welcome_back),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Zaloguj się, aby kontynuować nawigację.",
+                    text = stringResource(R.string.login_subtitle),
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     lineHeight = 16.sp
@@ -120,9 +125,8 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // --- Pole Email ---
                 Text(
-                    text = "Email",
+                    text = stringResource(R.string.label_email),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.primary,
@@ -132,22 +136,21 @@ fun LoginScreen(
                     value = email,
                     onValueChange = { email = it },
                     placeholder = {
-                        Text(
-                            "twoj@email.pl",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                            fontSize = 13.sp
-                        )
+                        Text(stringResource(R.string.placeholder_email), fontSize = 13.sp)
                     },
                     leadingIcon = {
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
-                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), CircleShape),
+                                .background(
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                                    CircleShape
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.Email,
-                                contentDescription = "Email Icon",
+                                contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                 modifier = Modifier.size(18.dp)
                             )
@@ -160,34 +163,30 @@ fun LoginScreen(
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colorScheme.primary,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        unfocusedIndicatorColor = Color.Transparent
                     ),
                     singleLine = true
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // --- Pole Hasło ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Hasło",
+                        text = stringResource(R.string.label_password),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = "Zapomniałeś hasła?",
+                        text = stringResource(R.string.forgot_password),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium,
-                        modifier = Modifier.clickable { /* TODO: Nawigacja do resetu */ }
+                        modifier = Modifier.clickable { /* Handle Password Reset */ }
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -195,16 +194,12 @@ fun LoginScreen(
                     value = password,
                     onValueChange = { password = it },
                     placeholder = {
-                        Text(
-                            "••••••••",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                            fontSize = 13.sp
-                        )
+                        Text(stringResource(R.string.placeholder_password), fontSize = 13.sp)
                     },
                     leadingIcon = {
                         Icon(
                             Icons.Default.Lock,
-                            contentDescription = "Lock Icon",
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                             modifier = Modifier.size(18.dp)
                         )
@@ -217,17 +212,13 @@ fun LoginScreen(
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colorScheme.primary,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        unfocusedIndicatorColor = Color.Transparent
                     ),
                     singleLine = true
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // --- WIDŻET RECAPTCHA ---
                 RecaptchaWidget(
                     isVerified = isRecaptchaVerified,
                     onVerifyChange = { isRecaptchaVerified = it }
@@ -235,37 +226,41 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // --- Przycisk Logowania ---
                 Button(
                     onClick = {
                         val emailTrimmed = email.trim()
                         val passwordTrimmed = password.trim()
 
                         if (emailTrimmed.isEmpty() || passwordTrimmed.isEmpty()) {
-                            Toast.makeText(context, "Uzupełnij dane", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, fillDataMsg, Toast.LENGTH_SHORT).show()
                             return@Button
                         }
 
                         if (!isRecaptchaVerified) {
-                            Toast.makeText(context, "Potwierdź, że nie jesteś robotem", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, verifyRobotMsg, Toast.LENGTH_SHORT).show()
                             return@Button
                         }
 
                         isLoading = true
                         val activity = context as? Activity
                         if (activity != null) {
-                            authRepository.login(activity, emailTrimmed, passwordTrimmed) { success, error ->
+                            authRepository.login(
+                                activity,
+                                emailTrimmed,
+                                passwordTrimmed
+                            ) { success, error ->
                                 isLoading = false
                                 if (success) {
-                                    Toast.makeText(context, "Zalogowano", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, loggedInMsg, Toast.LENGTH_SHORT).show()
                                     onNavigateToMap()
                                 } else {
-                                    Toast.makeText(context, "ERROR: ${error ?: "Nieznany błąd"}", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "ERROR: $error", Toast.LENGTH_LONG)
+                                        .show()
                                 }
                             }
                         } else {
                             isLoading = false
-                            Toast.makeText(context, "Błąd kontekstu aplikacji", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, contextErrorMsg, Toast.LENGTH_SHORT).show()
                         }
                     },
                     enabled = !isLoading,
@@ -273,27 +268,29 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Zaloguj się", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.btn_login),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // --- Tekst Rejestracji ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Nie masz konta? ",
+                        text = stringResource(R.string.no_account),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                     )
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Zarejestruj się",
+                        text = stringResource(R.string.register_link),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
@@ -307,18 +304,16 @@ fun LoginScreen(
         Spacer(modifier = Modifier.weight(1f))
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- 3. Przed-stopka: Ustawienia ---
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                // JĘZYK
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(36.dp)
+                        .height(40.dp)
                         .border(1.dp, borderColor, RoundedCornerShape(8.dp))
                         .clip(RoundedCornerShape(8.dp))
                 ) {
@@ -326,42 +321,47 @@ fun LoginScreen(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .background(if (selectedLanguage == "EN") MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { selectedLanguage = "EN" },
+                            .background(if (currentLanguage == "en") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
+                            .clickable { onLanguageChange("en") },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "EN",
-                            color = if (selectedLanguage == "EN") MaterialTheme.colorScheme.primary else textSecondaryColor,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
+                            color = if (currentLanguage == "en") MaterialTheme.colorScheme.primary else textSecondaryColor,
+                            fontWeight = if (currentLanguage == "en") FontWeight.Bold else FontWeight.Normal
                         )
                     }
-                    Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(borderColor))
+
+                    Box(modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(borderColor))
+
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .background(if (selectedLanguage == "PL") MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { selectedLanguage = "PL" },
+                            .background(if (currentLanguage == "pl") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
+                            .clickable { onLanguageChange("pl") },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "PL",
-                            color = if (selectedLanguage == "PL") MaterialTheme.colorScheme.primary else textSecondaryColor,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
+                            color = if (currentLanguage == "pl") MaterialTheme.colorScheme.primary else textSecondaryColor,
+                            fontWeight = if (currentLanguage == "pl") FontWeight.Bold else FontWeight.Normal
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // DARK MODE
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            RoundedCornerShape(8.dp)
+                        )
                         .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -375,7 +375,7 @@ fun LoginScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Dark Mode",
+                            text = stringResource(R.string.dark_mode),
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 13.sp
@@ -384,12 +384,6 @@ fun LoginScreen(
                     Switch(
                         checked = isDarkTheme,
                         onCheckedChange = { onThemeChange(it) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor = textSecondaryColor,
-                            uncheckedTrackColor = borderColor
-                        ),
                         modifier = Modifier.scale(0.7f)
                     )
                 }
@@ -398,9 +392,8 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- Stopka z regulaminem ---
         Text(
-            text = "Logując się, akceptujesz nasz Regulamin oraz Politykę Prywatności.",
+            text = stringResource(R.string.footer_terms),
             fontSize = 9.sp,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
@@ -409,54 +402,34 @@ fun LoginScreen(
     }
 }
 
-// --- Placeholder dla recaptchy (narazie atrapa) ---
+/**
+ * A mock reCAPTCHA widget allowing the user to verify they are not a robot.
+ *
+ * @param isVerified The current verification state.
+ * @param onVerifyChange Callback triggered when the verification state changes.
+ */
 @Composable
-fun RecaptchaWidget(
-    isVerified: Boolean,
-    onVerifyChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun RecaptchaWidget(isVerified: Boolean, onVerifyChange: (Boolean) -> Unit) {
     Row(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            // Zmieniono tło na ładnie współpracujące z motywem (bez sztywnych kolorów)
             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Checkbox(
-            checked = isVerified,
-            onCheckedChange = { onVerifyChange(it) },
-            colors = CheckboxDefaults.colors(
-                checkedColor = MaterialTheme.colorScheme.primary,
-                uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-            )
-        )
-
+        Checkbox(checked = isVerified, onCheckedChange = { onVerifyChange(it) })
         Text(
-            text = "Nie jestem robotem",
+            text = stringResource(R.string.recaptcha_label),
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface
         )
-
         Spacer(modifier = Modifier.weight(1f))
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(end = 8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Refresh,
-                contentDescription = "reCAPTCHA",
-                tint = Color(0xFF4285F4),
-                modifier = Modifier.size(24.dp)
-            )
-            Text(
-                text = "reCAPTCHA",
-                fontSize = 8.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-            )
-        }
+        Icon(
+            Icons.Default.Refresh,
+            contentDescription = null,
+            tint = Color(0xFF4285F4),
+            modifier = Modifier.size(24.dp)
+        )
     }
 }

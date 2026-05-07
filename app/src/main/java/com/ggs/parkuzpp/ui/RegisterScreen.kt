@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brightness4
@@ -24,8 +23,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -33,29 +32,44 @@ import androidx.compose.ui.unit.sp
 import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.auth.AuthRepository
 
+/**
+ * Composable function that displays the registration screen.
+ * Handles user input for email and passwords, recaptcha validation,
+ * and interacts with the [AuthRepository] to create a new account.
+ *
+ * @param isDarkTheme Indicates if the dark theme is currently active.
+ * @param onThemeChange Callback triggered to toggle between dark and light themes.
+ * @param onNavigateToLogin Callback to navigate back to the login screen.
+ * @param currentLanguage The currently selected app language code (e.g., "en", "pl").
+ * @param onLanguageChange Callback triggered to update the app's language preference.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
-    isDarkTheme: Boolean, // <-- DODANE
-    onThemeChange: (Boolean) -> Unit, // <-- DODANE
-    onNavigateToLogin: () -> Unit
+    isDarkTheme: Boolean,
+    onThemeChange: (Boolean) -> Unit,
+    onNavigateToLogin: () -> Unit,
+    currentLanguage: String,
+    onLanguageChange: (String) -> Unit
 ) {
     val context = LocalContext.current
     val authRepository = remember { AuthRepository() }
 
-    // --- STANY ---
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var isRecaptchaVerified by remember { mutableStateOf(false) }
-    var selectedLanguage by remember { mutableStateOf("EN") }
 
-    // --- KOLORY POMOCNICZE DLA WIDŻETÓW ---
+    val fillDataMsg = stringResource(R.string.toast_fill_data)
+    val passMismatchMsg = stringResource(R.string.toast_passwords_not_match)
+    val verifyRobotMsg = stringResource(R.string.toast_verify_robot)
+    val regSuccessMsg = stringResource(R.string.toast_register_success)
+    val regErrorMsg = stringResource(R.string.toast_register_error)
+
     val borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
     val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
 
-    // Główny kontener ekranu
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -64,13 +78,10 @@ fun RegisterScreen(
             .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- 1. Sekcja Logo i Nazwa Aplikacji ---
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
                 painter = painterResource(id = R.drawable.ic_logo_withoutbg),
-                contentDescription = "ParkUZ Logo",
+                contentDescription = stringResource(R.string.logo_desc),
                 modifier = Modifier
                     .size(64.dp)
                     .padding(8.dp)
@@ -86,28 +97,22 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- 2. Karta Rejestracji ---
         Card(
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp)
-            ) {
-                // Nagłówek w karcie
+            Column(modifier = Modifier.padding(24.dp)) {
                 Text(
-                    text = "Zarejestruj się",
+                    text = stringResource(R.string.register_title),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Załóż konto, aby korzystać z aplikacji ParkUZ.",
+                    text = stringResource(R.string.register_subtitle),
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     lineHeight = 16.sp
@@ -115,12 +120,11 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // --- Pole Email ---
                 Text(
-                    text = "Email",
+                    text = stringResource(R.string.label_email),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 TextField(
@@ -128,8 +132,7 @@ fun RegisterScreen(
                     onValueChange = { email = it },
                     placeholder = {
                         Text(
-                            "twoj@email.pl",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                            stringResource(R.string.placeholder_email),
                             fontSize = 13.sp
                         )
                     },
@@ -137,40 +140,35 @@ fun RegisterScreen(
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
-                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), CircleShape),
-                            contentAlignment = Alignment.Center
+                                .background(
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                                    CircleShape
+                                ), contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.Email,
-                                contentDescription = "Email Icon",
+                                contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                 modifier = Modifier.size(18.dp)
                             )
                         }
                     },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colorScheme.primary,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        unfocusedIndicatorColor = Color.Transparent
                     ),
                     singleLine = true
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // --- Pole Hasło ---
                 Text(
-                    text = "Hasło",
+                    text = stringResource(R.string.label_password),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 TextField(
@@ -178,43 +176,35 @@ fun RegisterScreen(
                     onValueChange = { password = it },
                     placeholder = {
                         Text(
-                            "••••••••",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                            stringResource(R.string.placeholder_password),
                             fontSize = 13.sp
                         )
                     },
+                    visualTransformation = PasswordVisualTransformation(),
                     leadingIcon = {
                         Icon(
                             Icons.Default.Lock,
-                            contentDescription = "Lock Icon",
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                             modifier = Modifier.size(18.dp)
                         )
                     },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colorScheme.primary,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        unfocusedIndicatorColor = Color.Transparent
                     ),
                     singleLine = true
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // --- Pole Powtórz Hasło ---
                 Text(
-                    text = "Powtórz hasło",
+                    text = stringResource(R.string.label_confirm_password),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 TextField(
@@ -222,47 +212,36 @@ fun RegisterScreen(
                     onValueChange = { confirmPassword = it },
                     placeholder = {
                         Text(
-                            "••••••••",
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                            stringResource(R.string.placeholder_password),
                             fontSize = 13.sp
                         )
                     },
+                    visualTransformation = PasswordVisualTransformation(),
                     leadingIcon = {
                         Icon(
                             Icons.Default.Lock,
-                            contentDescription = "Lock Icon",
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                             modifier = Modifier.size(18.dp)
                         )
                     },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colorScheme.primary,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        unfocusedIndicatorColor = Color.Transparent
                     ),
                     singleLine = true
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // --- WIDŻET RECAPTCHA ---
-                // Używamy funkcji RecaptchaWidget zdefiniowanej w LoginScreen.kt!
                 RecaptchaWidget(
                     isVerified = isRecaptchaVerified,
-                    onVerifyChange = { isRecaptchaVerified = it }
-                )
+                    onVerifyChange = { isRecaptchaVerified = it })
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // --- Przycisk Rejestracji ---
                 Button(
                     onClick = {
                         val emailTrimmed = email.trim()
@@ -270,31 +249,27 @@ fun RegisterScreen(
                         val confirmPassTrimmed = confirmPassword.trim()
 
                         if (emailTrimmed.isEmpty() || passTrimmed.isEmpty() || confirmPassTrimmed.isEmpty()) {
-                            Toast.makeText(context, "Uzupełnij wszystkie dane", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, fillDataMsg, Toast.LENGTH_SHORT).show()
                             return@Button
                         }
-
                         if (passTrimmed != confirmPassTrimmed) {
-                            Toast.makeText(context, "Podane hasła nie są identyczne", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, passMismatchMsg, Toast.LENGTH_SHORT).show()
                             return@Button
                         }
-
-                        // Blokada, jeśli reCAPTCHA nie jest odhaczona
                         if (!isRecaptchaVerified) {
-                            Toast.makeText(context, "Potwierdź, że nie jesteś robotem", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, verifyRobotMsg, Toast.LENGTH_SHORT).show()
                             return@Button
                         }
 
                         isLoading = true
-
                         authRepository.register(emailTrimmed, passTrimmed) { success, error ->
                             isLoading = false
-
                             if (success) {
-                                Toast.makeText(context, "Rejestracja OK", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, regSuccessMsg, Toast.LENGTH_SHORT).show()
                                 onNavigateToLogin()
                             } else {
-                                Toast.makeText(context, error ?: "Błąd rejestracji", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, error ?: regErrorMsg, Toast.LENGTH_SHORT)
+                                    .show()
                             }
                         }
                     },
@@ -302,28 +277,29 @@ fun RegisterScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Zarejestruj się", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.register_link),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // --- Link do Logowania ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Masz już konto? ",
+                        text = stringResource(R.string.already_have_account),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                     )
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Zaloguj się",
+                        text = stringResource(R.string.btn_login),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
@@ -337,18 +313,16 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.weight(1f))
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- 3. Przed-stopka: Ustawienia ---
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                // JĘZYK
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(36.dp)
+                        .height(40.dp)
                         .border(1.dp, borderColor, RoundedCornerShape(8.dp))
                         .clip(RoundedCornerShape(8.dp))
                 ) {
@@ -356,42 +330,44 @@ fun RegisterScreen(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .background(if (selectedLanguage == "EN") MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { selectedLanguage = "EN" },
+                            .background(if (currentLanguage == "en") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
+                            .clickable { onLanguageChange("en") },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "EN",
-                            color = if (selectedLanguage == "EN") MaterialTheme.colorScheme.primary else textSecondaryColor,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
+                            color = if (currentLanguage == "en") MaterialTheme.colorScheme.primary else textSecondaryColor,
+                            fontWeight = if (currentLanguage == "en") FontWeight.Bold else FontWeight.Normal
                         )
                     }
-                    Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(borderColor))
+                    Box(modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(borderColor))
+
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .background(if (selectedLanguage == "PL") MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { selectedLanguage = "PL" },
+                            .background(if (currentLanguage == "pl") MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
+                            .clickable { onLanguageChange("pl") },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "PL",
-                            color = if (selectedLanguage == "PL") MaterialTheme.colorScheme.primary else textSecondaryColor,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
+                            color = if (currentLanguage == "pl") MaterialTheme.colorScheme.primary else textSecondaryColor,
+                            fontWeight = if (currentLanguage == "pl") FontWeight.Bold else FontWeight.Normal
                         )
                     }
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // DARK MODE
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            RoundedCornerShape(8.dp)
+                        )
                         .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -405,7 +381,7 @@ fun RegisterScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Dark Mode",
+                            text = stringResource(R.string.dark_mode),
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 13.sp
@@ -414,18 +390,11 @@ fun RegisterScreen(
                     Switch(
                         checked = isDarkTheme,
                         onCheckedChange = { onThemeChange(it) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor = textSecondaryColor,
-                            uncheckedTrackColor = borderColor
-                        ),
                         modifier = Modifier.scale(0.7f)
                     )
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
