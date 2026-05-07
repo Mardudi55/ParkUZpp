@@ -78,7 +78,7 @@ fun MenuScreen(
         )
         DrawerMenuItem(
             text = stringResource(R.string.menu_settings),
-            icon = Icons.Default.AccountCircle,
+            icon = Icons.Default.Settings,
             isSelected = currentRoute == "settings",
             onClick = { onNavigate("settings") }
         )

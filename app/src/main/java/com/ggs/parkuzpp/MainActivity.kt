@@ -10,7 +10,8 @@ import com.ggs.parkuzpp.ui.AppNavigation
 import com.ggs.parkuzpp.ui.theme.ParkUZTheme
 import com.google.firebase.FirebaseApp
 import androidx.core.content.edit
-
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.saveable.rememberSaveable
 /**
  * The main entry point of the ParkUZ++ application.
  * Sets up the initial context, initializes Firebase, applies the user's preferred locale,
@@ -38,25 +39,33 @@ class MainActivity : ComponentActivity() {
         bluetoothController.start()
 
         setContent {
+            val context = LocalContext.current
             val prefs = remember { getSharedPreferences(PREFS_NAME, MODE_PRIVATE) }
+
             var currentLanguage by remember {
                 mutableStateOf(prefs.getString(PREF_LANG_KEY, DEFAULT_LANG) ?: DEFAULT_LANG)
             }
 
-            var isDarkTheme by remember { mutableStateOf(false) }
+            var isDarkTheme by rememberSaveable {
+                mutableStateOf(prefs.getBoolean("is_dark_theme", false))
+            }
 
             val onLanguageChange: (String) -> Unit = { newLang ->
                 prefs.edit { putString(PREF_LANG_KEY, newLang) }
                 currentLanguage = newLang
                 LocaleHelper.setLocale(this, newLang)
-                // Recreate the activity to apply the new locale across the entire UI
                 this.recreate()
+            }
+
+            val onThemeChange: (Boolean) -> Unit = { newState ->
+                isDarkTheme = newState
+                prefs.edit { putBoolean("is_dark_theme", newState) }
             }
 
             ParkUZTheme(darkTheme = isDarkTheme) {
                 AppNavigation(
                     isDarkTheme = isDarkTheme,
-                    onThemeChange = { isDarkTheme = it },
+                    onThemeChange = onThemeChange,
                     currentLanguage = currentLanguage,
                     onLanguageChange = onLanguageChange
                 )

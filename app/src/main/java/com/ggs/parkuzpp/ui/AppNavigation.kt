@@ -195,9 +195,7 @@ fun MainScreen(
                         scope.launch { drawerState.close() }
                         if (currentRoute != route) {
                             bottomNavController.navigate(route) {
-                                popUpTo(bottomNavController.graph.startDestinationId) {
-                                    saveState = true
-                                }
+                                popUpTo(bottomNavController.graph.startDestinationId) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
