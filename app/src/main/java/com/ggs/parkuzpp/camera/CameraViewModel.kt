@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.location.UserTriggeredGPSService
 import com.ggs.parkuzpp.model.Coordinates
 import com.ggs.parkuzpp.model.ParkSpot
@@ -17,8 +18,13 @@ import com.ggs.parkuzpp.model.ParkingRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Locale
 
+/**
+ * ViewModel responsible for handling camera operations, confirming photos,
+ * fetching user location, and saving the new parking spot to the repository.
+ */
 class CameraViewModel : ViewModel() {
 
     private val repository = ParkingRepository()
@@ -35,10 +41,21 @@ class CameraViewModel : ViewModel() {
     var isSaving by mutableStateOf(false)
         private set
 
+    /**
+     * Sets the URI of the recently captured photo in the ViewModel state.
+     *
+     * @param uri The [Uri] of the captured image.
+     */
     fun setCaptured(uri: Uri) {
         lastCapturedUri = uri
     }
 
+    /**
+     * Confirms the captured photo, fetches current GPS coordinates, resolves the address,
+     * and saves the parking spot data to the database.
+     *
+     * @param context The Android context required for location services and string resources.
+     */
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     fun confirmPhotoAndSave(context: Context) {
         val uri = lastCapturedUri ?: return
@@ -50,21 +67,17 @@ class CameraViewModel : ViewModel() {
                 val location = gpsService.getCurrentLocation()
 
                 if (location == null) {
-                    _errorEvent.emit("Nie udało się pobrać lokalizacji GPS.")
+                    _errorEvent.emit(context.getString(R.string.error_gps))
                     return@launch
                 }
 
                 val addressLabel = getAddressFromLocation(context, location.latitude, location.longitude)
-
-                // --- KLUCZOWA POPRAWKA TUTAJ ---
-                // Używamy uri.toString(), co daje poprawny format file:///data/...
-                // Poprzednio używaliśmy uri.path, co dawało błędne /data/...
                 val pathToString = uri.toString()
 
                 val newSpot = ParkSpot(
                     active = true,
                     label = addressLabel,
-                    photos = listOf(pathToString), // Zapisujemy poprawny String file://
+                    photos = listOf(pathToString),
                     coordinates = Coordinates(
                         lat = location.latitude,
                         lng = location.longitude
@@ -75,32 +88,35 @@ class CameraViewModel : ViewModel() {
                 val result = repository.saveParkingSpot(newSpot)
 
                 if (result.isSuccess) {
-                    // UWAGA: Nie czyścimy tu lastCapturedUri,
-                    // robi to CameraScreen po odebraniu zdarzenia photoSaved
                     _photoSaved.emit(Unit)
                 } else {
-                    _errorEvent.emit(result.exceptionOrNull()?.message ?: "Błąd zapisu do bazy")
+                    _errorEvent.emit(result.exceptionOrNull()?.message ?: context.getString(R.string.error_db_save))
                 }
             } catch (e: Exception) {
-                _errorEvent.emit(e.message ?: "Wystąpił nieoczekiwany błąd")
+                _errorEvent.emit(e.message ?: context.getString(R.string.error_unexpected))
             } finally {
                 isSaving = false
             }
         }
     }
 
-    // 1. Używamy po udanym ZAPISIE (czyści ekran, zostawia plik dla historii)
+    /**
+     * Clears the UI state by resetting the captured URI.
+     * Designed to be called after a successful save operation to clear the screen while keeping the physical file.
+     */
     fun clearUiState() {
         lastCapturedUri = null
     }
 
-    // 2. Używamy przy ANULOWANIU (czyści ekran i kasuje fizyczny plik z dysku)
+    /**
+     * Discards the photo by clearing the UI state and deleting the physical file from the device storage.
+     * Designed to be called when the user cancels the photo confirmation.
+     */
     fun discardPhoto() {
         lastCapturedUri?.let { uri ->
-            // Pobieramy ścieżkę z Uri i kasujemy plik
             val path = uri.path
             if (path != null) {
-                val file = java.io.File(path)
+                val file = File(path)
                 if (file.exists()) {
                     file.delete()
                 }
@@ -118,10 +134,10 @@ class CameraViewModel : ViewModel() {
                 listOfNotNull(address.thoroughfare, address.subThoroughfare, address.locality)
                     .joinToString(", ")
             } else {
-                "Nieznany adres"
+                context.getString(R.string.address_unknown)
             }
         } catch (e: Exception) {
-            "Współrzędne: $lat, $lng"
+            context.getString(R.string.address_coordinates, lat, lng)
         }
     }
 }

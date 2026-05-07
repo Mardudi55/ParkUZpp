@@ -21,26 +21,37 @@ import com.ggs.parkuzpp.camera.CameraController
 import com.ggs.parkuzpp.camera.CameraViewModel
 import kotlinx.coroutines.flow.collectLatest
 
+/**
+ * Composable screen that integrates the camera preview and allows the user to capture
+ * a photo to save their parking location.
+ *
+ * @param viewModel The [CameraViewModel] managing state and business logic for the camera.
+ * @param controller The [CameraController] handling the CameraX lifecycle and image capture.
+ * @param onNavigateBack Callback to navigate back to the previous screen (e.g., the map) after saving.
+ */
 @Composable
 fun CameraScreen(
     viewModel: CameraViewModel,
     controller: CameraController,
-    onNavigateBack: () -> Unit // Funkcja do powrotu na poprzedni ekran (np. mapę)
+    onNavigateBack: () -> Unit
 ) {
     val capturedUri = viewModel.lastCapturedUri
     val isSaving = viewModel.isSaving
     val context = LocalContext.current
 
-    // Nasłuchiwanie na sygnał sukcesu (zapisano do bazy)
+    val successMessage = stringResource(R.string.parked_successfully)
+
+    // Listen for the success signal (saved to database)
     LaunchedEffect(Unit) {
         viewModel.photoSaved.collectLatest {
-            Toast.makeText(context, "Zaparkowano pomyślnie!", Toast.LENGTH_SHORT).show()
-            viewModel.clearUiState() // ZOSTAWIA plik na dysku, żeby historia miała co wyświetlić
+            Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+            // Clears the UI state but leaves the file on disk for the history screen
+            viewModel.clearUiState()
             onNavigateBack()
         }
     }
 
-    // Nasłuchiwanie na błędy (np. brak GPS, odmowa dostępu w Firebase)
+    // Listen for error events (e.g., missing GPS, Firebase permission denied)
     LaunchedEffect(Unit) {
         viewModel.errorEvent.collectLatest { errorMessage ->
             Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
@@ -48,13 +59,13 @@ fun CameraScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Podgląd aparatu
+        // Camera preview
         AndroidView(
             factory = { controller.previewView },
             modifier = Modifier.fillMaxSize()
         )
 
-        // Przycisk robienia zdjęcia
+        // Capture photo button
         Button(
             onClick = {
                 controller.takePhoto { uri ->
@@ -65,14 +76,15 @@ fun CameraScreen(
                 .align(Alignment.BottomCenter)
                 .padding(32.dp)
         ) {
-            Text(stringResource(id = R.string.take_photo)) // Podmienione
+            Text(stringResource(R.string.take_photo))
         }
 
-        // Okno dialogowe potwierdzające zapis lokalizacji i zdjęcia
+        // Confirmation dialog for saving the location and photo
         if (capturedUri != null) {
             AlertDialog(
                 onDismissRequest = {
-                    if (!isSaving) viewModel.discardPhoto() // USUWA plik przy kliknięciu w tło
+                    // Deletes the file if dismissed by clicking outside
+                    if (!isSaving) viewModel.discardPhoto()
                 },
                 confirmButton = {
                     TextButton(
@@ -81,21 +93,21 @@ fun CameraScreen(
                         },
                         enabled = !isSaving
                     ) {
-                        Text(if (isSaving) "Zapisywanie..." else "Zapisz lokalizację")
+                        Text(if (isSaving) stringResource(R.string.saving) else stringResource(R.string.save_location))
                     }
                 },
                 dismissButton = {
                     TextButton(
-                        onClick = { viewModel.discardPhoto() }, // USUWA plik przy "Anuluj"
+                        onClick = { viewModel.discardPhoto() }, // Deletes the file on "Cancel"
                         enabled = !isSaving
                     ) {
-                        Text("Anuluj")
+                        Text(stringResource(R.string.cancel))
                     }
                 },
                 text = {
                     Image(
                         painter = rememberAsyncImagePainter(capturedUri),
-                        contentDescription = stringResource(id = R.string.captured_photo_desc), // Podmienione
+                        contentDescription = stringResource(R.string.captured_photo_desc),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

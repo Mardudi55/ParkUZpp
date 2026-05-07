@@ -6,42 +6,64 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import com.ggs.parkuzpp.R
 
 /**
- * Repository responsible for managing parking spot data in Firebase Firestore.
- * It handles saving new spots and providing access to the "park-spots" collection.
+ * Repository responsible for managing parking data within Firestore.
+ * Implements the "Single Active Spot" policy, ensuring only one parking spot is active at a time.
  */
 class ParkingRepository {
 
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
-    private val spotsCollection = firestore.collection("park-spots")
+    private val spotsCollection = firestore.collection(COLLECTION_PARK_SPOTS)
+
+    private val currentUid: String?
+        get() = auth.currentUser?.uid
 
     /**
-     * Saves a [ParkSpot] to Firestore.
-     * If the [ParkSpot.userId] is empty, it automatically populates it
-     * with the current authenticated user's ID.
+     * Provides a stream of the user's currently active parking spot.
+     * Yields null if no active spot exists or if the user is unauthenticated.
      *
-     * @param spot The parking spot data to save.
-     * @return Result indicating success or the caught exception.
+     * @return A [Flow] emitting the single active [ParkSpot] or null.
+     */
+    fun getActiveSpotFlow(): Flow<ParkSpot?> = callbackFlow {
+        val uid = currentUid ?: run {
+            trySend(null)
+            return@callbackFlow
+        }
+
+        val registration = spotsCollection
+            .whereEqualTo(FIELD_USER_ID, uid)
+            .whereEqualTo(FIELD_ACTIVE, true)
+            .limit(1)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
+
+                val spot = snapshot?.documents?.firstOrNull()?.let { doc ->
+                    doc.toObject(ParkSpot::class.java)?.copy(id = doc.id)
+                }
+                trySend(spot)
+            }
+
+        awaitClose { registration.remove() }
+    }
+
+    /**
+     * Saves a new parking spot and automatically deactivates all previously active spots.
+     *
+     * @param spot The [ParkSpot] to be saved.
+     * @return A [Result] indicating success or containing an exception on failure.
      */
     suspend fun saveParkingSpot(spot: ParkSpot): Result<Unit> {
+        val uid = currentUid ?: return Result.failure(Exception(R.string.error_no_auth.toString()))
+
         return try {
-            // Automatyczne przypisanie ID użytkownika, jeśli nie zostało podane
-            val spotToSave = if (spot.userId.isEmpty()) {
-                spot.copy(userId = auth.currentUser?.uid ?: "")
-            } else {
-                spot
-            }
+            deactivatePreviousSpots().getOrThrow()
 
-            // Sprawdzenie czy mamy ID użytkownika (wymagane w Twojej strukturze)
-            if (spotToSave.userId.isEmpty()) {
-                return Result.failure(Exception("User not authenticated"))
-            }
+            val spotToSave = spot.copy(userId = uid, active = true)
 
-            // Zapis do Firestore (używamy .add() dla automatycznego ID dokumentu)
             spotsCollection.add(spotToSave).await()
-
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -49,65 +71,81 @@ class ParkingRepository {
     }
 
     /**
-     * Marks all previous parking spots as inactive for the current user.
-     * Useful when starting a new parking session to ensure only one "active" spot exists.
+     * Activates a specific parking spot from the user's history.
+     *
+     * @param documentId The Firestore document ID of the parking spot to activate.
+     * @return A [Result] indicating success or containing an exception on failure.
+     */
+    suspend fun activateSpot(documentId: String): Result<Unit> {
+        return try {
+            deactivatePreviousSpots().getOrThrow()
+            spotsCollection.document(documentId).update(FIELD_ACTIVE, true).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Deactivates all currently active parking spots for the authenticated user.
+     *
+     * @return A [Result] indicating success or containing an exception on failure.
      */
     suspend fun deactivatePreviousSpots(): Result<Unit> {
-        val uid = auth.currentUser?.uid ?: return Result.failure(Exception("No user"))
+        val uid = currentUid ?: return Result.failure(Exception(R.string.error_no_user.toString()))
 
         return try {
             val activeSpots = spotsCollection
-                .whereEqualTo("user-id", uid)
-                .whereEqualTo("active", true)
+                .whereEqualTo(FIELD_USER_ID, uid)
+                .whereEqualTo(FIELD_ACTIVE, true)
                 .get()
                 .await()
 
-            firestore.runBatch { batch ->
-                for (doc in activeSpots.documents) {
-                    batch.update(doc.reference, "active", false)
-                }
-            }.await()
-
+            if (!activeSpots.isEmpty) {
+                firestore.runBatch { batch ->
+                    for (doc in activeSpots.documents) {
+                        batch.update(doc.reference, FIELD_ACTIVE, false)
+                    }
+                }.await()
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
+    /**
+     * Retrieves the complete parking history for the authenticated user.
+     * Maps document IDs to enable subsequent updates or deletions.
+     *
+     * @return A [Flow] emitting a list of [ParkSpot] items.
+     */
     fun getParkingHistory(): Flow<List<ParkSpot>> = callbackFlow {
-        val uid = auth.currentUser?.uid
-        if (uid == null) {
+        val uid = currentUid ?: run {
             trySend(emptyList())
-            close()
             return@callbackFlow
         }
 
         val subscription = spotsCollection
-            .whereEqualTo("user-id", uid)
-            // Jeśli chcesz sortować po dacie, odznacz poniższą linię (wymaga indeksu w Firebase)
-            // .orderBy("timestamp", Query.Direction.DESCENDING)
+            .whereEqualTo(FIELD_USER_ID, uid)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    println("🔥 BŁĄD FIREBASE (Historia): ${error.message}")
-                    return@addSnapshotListener
-                }
+                if (error != null) return@addSnapshotListener
 
-                if (snapshot != null) {
-                    try {
-                        val spots = snapshot.toObjects(ParkSpot::class.java)
-                        println("🔥 Pobrano dokumentów: ${spots.size}")
-                        trySend(spots)
-                    } catch (e: Exception) {
-                        println("🔥 BŁĄD MAPOWANIA DANYCH: ${e.message}")
-                    }
-                }
+                val spots = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(ParkSpot::class.java)?.copy(id = doc.id)
+                } ?: emptyList()
+
+                trySend(spots)
             }
 
         awaitClose { subscription.remove() }
     }
 
     /**
-     * Usuwa wpis o parkowaniu na podstawie jego ID.
+     * Deletes a specific parking spot from Firestore.
+     *
+     * @param documentId The Firestore document ID of the parking spot to delete.
+     * @return A [Result] indicating success or containing an exception on failure.
      */
     suspend fun deleteParkingSpot(documentId: String): Result<Unit> {
         return try {
@@ -116,5 +154,11 @@ class ParkingRepository {
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    companion object {
+        private const val COLLECTION_PARK_SPOTS = "park-spots"
+        private const val FIELD_USER_ID = "user-id"
+        private const val FIELD_ACTIVE = "active"
     }
 }

@@ -1,8 +1,8 @@
 package com.ggs.parkuzpp.model
 
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,6 +11,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * ViewModel responsible for managing the state and business logic of the parking history screen.
+ */
 class HistoryViewModel : ViewModel() {
 
     private val repository = ParkingRepository()
@@ -28,8 +31,24 @@ class HistoryViewModel : ViewModel() {
     private fun fetchHistory() {
         viewModelScope.launch {
             repository.getParkingHistory().collect { spots ->
-                // Sortowanie lokalne (od najnowszych), jeśli nie używamy orderBy w Firestore
                 _historyItems.value = spots.sortedByDescending { it.timestamp }
+            }
+        }
+    }
+
+    /**
+     * Activates a specific parking spot from the user's history and triggers navigation to the map.
+     *
+     * @param documentId The Firestore document ID of the parking spot to activate.
+     * @param onNavigate Callback executed upon successful activation to handle navigation.
+     */
+    fun activateAndNavigateToMap(documentId: String, onNavigate: () -> Unit) {
+        viewModelScope.launch {
+            val result = repository.activateSpot(documentId)
+            if (result.isSuccess) {
+                onNavigate()
+            } else {
+                println("🔥 Error activating spot: ${result.exceptionOrNull()?.message}")
             }
         }
     }
@@ -48,12 +67,9 @@ class HistoryViewModel : ViewModel() {
     fun refresh() {
         viewModelScope.launch {
             _isRefreshing.value = true
-
             fetchHistory()
-
-            kotlinx.coroutines.delay(1000)
+            delay(1000)
             _isRefreshing.value = false
         }
     }
-
 }

@@ -24,6 +24,12 @@ import androidx.compose.ui.unit.sp
 import com.ggs.parkuzpp.R
 import com.google.firebase.auth.FirebaseAuth
 
+/**
+ * Composable function that displays the account settings screen.
+ * Allows authenticated users to change their account password.
+ *
+ * @param onBack Callback triggered to navigate back to the previous screen.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountScreen(
@@ -54,14 +60,14 @@ fun AccountScreen(
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Text(
-                    text = stringResource(id = R.string.password_title),
+                    text = stringResource(R.string.password_title),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = stringResource(id = R.string.password_subtitle),
+                    text = stringResource(R.string.password_subtitle),
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     lineHeight = 16.sp
@@ -70,7 +76,7 @@ fun AccountScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Text(
-                    text = stringResource(id = R.string.password_label_new),
+                    text = stringResource(R.string.password_label_new),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.primary,
@@ -80,7 +86,7 @@ fun AccountScreen(
                     value = password,
                     onValueChange = { password = it },
                     placeholder = {
-                        Text(stringResource(id = R.string.password_placeholder), fontSize = 13.sp)
+                        Text(stringResource(R.string.password_placeholder), fontSize = 13.sp)
                     },
                     leadingIcon = {
                         Icon(
@@ -105,9 +111,9 @@ fun AccountScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                val errorLengthMsg = stringResource(id = R.string.password_toast_length)
-                val successMsg = stringResource(id = R.string.password_toast_success)
-                val errorTemplateMsg = stringResource(id = R.string.password_toast_error)
+                val errorLengthMsg = stringResource(R.string.password_toast_length)
+                val successMsg = stringResource(R.string.password_toast_success)
+                val errorTemplateMsg = stringResource(R.string.password_toast_error)
 
                 Button(
                     onClick = {
@@ -127,8 +133,8 @@ fun AccountScreen(
                             }
                             ?.addOnFailureListener { exception ->
                                 isLoading = false
-                                // Używamy .format() na pobranym wcześniej szablonie, zamiast context.getString()
-                                val errorMsg = errorTemplateMsg.format(exception.message ?: "Nieznany błąd")
+                                val errorMsg =
+                                    errorTemplateMsg.format(exception.message ?: "Unknown error")
                                 Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
                             }
                     },
@@ -139,7 +145,11 @@ fun AccountScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text(stringResource(id = R.string.password_btn_change), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.password_btn_change),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
