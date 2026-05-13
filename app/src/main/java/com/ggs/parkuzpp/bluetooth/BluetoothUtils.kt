@@ -14,7 +14,8 @@ object BluetoothUtils {
 
     @SuppressLint("MissingPermission")
     fun chooseCarBluetooth(
-        context: Context
+        context: Context,
+        onDeviceSaved: () -> Unit
     ) {
 
         Log.d(
@@ -66,7 +67,7 @@ object BluetoothUtils {
 
             Toast.makeText(
                 context,
-                "No paired devices",
+                "No new paired devices",
                 Toast.LENGTH_LONG
             ).show()
 
@@ -93,14 +94,13 @@ object BluetoothUtils {
                     val selectedDevice =
                         pairedDevices[which]
 
-                    BluetoothRepository(context)
-                        .saveCar(
+                    repository.saveCar(
 
-                            selectedDevice.name
-                                ?: "Unknown Device",
+                        selectedDevice.name
+                            ?: "Unknown Device",
 
-                            selectedDevice.address
-                        )
+                        selectedDevice.address
+                    )
 
                     Toast.makeText(
                         context,
@@ -111,6 +111,9 @@ object BluetoothUtils {
                     startBluetoothMonitoring(
                         context
                     )
+
+                    // IMPORTANT
+                    onDeviceSaved()
                 }
 
                 .show()

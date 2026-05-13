@@ -48,10 +48,7 @@ class BluetoothMonitorService : Service() {
             createNotification()
         )
 
-        receiver = BluetoothReceiver {
-
-            onCarDisconnected()
-        }
+        val receiver = BluetoothReceiver()
 
         registerReceiver(
             receiver,

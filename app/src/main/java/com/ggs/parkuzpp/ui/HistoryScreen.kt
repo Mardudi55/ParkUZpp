@@ -31,6 +31,11 @@ import com.ggs.parkuzpp.R
 import com.ggs.parkuzpp.model.HistoryViewModel
 import com.ggs.parkuzpp.model.ParkSpot
 import androidx.core.net.toUri
+import android.hardware.Sensor
+import android.hardware.SensorManager
+import androidx.compose.ui.platform.LocalContext
+import com.ggs.parkuzpp.history.ShakeDetector
+import kotlinx.coroutines.launch
 
 /**
  * Composable function that displays the user's parking history.
@@ -49,7 +54,54 @@ fun HistoryScreen(
 ) {
     val historyItems by viewModel.historyItems.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val context = LocalContext.current
 
+    val sensorManager =
+        context.getSystemService(
+            SensorManager::class.java
+        )
+
+    val scope =
+        rememberCoroutineScope()
+    DisposableEffect(Unit) {
+
+        val shakeDetector =
+
+            ShakeDetector {
+
+                val newestItem =
+                    historyItems.firstOrNull()
+
+                if (newestItem != null) {
+
+                    scope.launch {
+
+                        viewModel.deleteItem(
+                            newestItem.id
+                        )
+                    }
+                }
+            }
+
+        val accelerometer =
+
+            sensorManager.getDefaultSensor(
+                Sensor.TYPE_ACCELEROMETER
+            )
+
+        sensorManager.registerListener(
+            shakeDetector,
+            accelerometer,
+            SensorManager.SENSOR_DELAY_UI
+        )
+
+        onDispose {
+
+            sensorManager.unregisterListener(
+                shakeDetector
+            )
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()

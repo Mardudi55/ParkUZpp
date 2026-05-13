@@ -35,8 +35,6 @@ class MainActivity : ComponentActivity() {
         bluetoothController =
             BluetoothController(this)
 
-        bluetoothController.start()
-
         setContent {
             val prefs = remember { getSharedPreferences(PREFS_NAME, MODE_PRIVATE) }
             var currentLanguage by remember {

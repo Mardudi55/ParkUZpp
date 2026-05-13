@@ -1,5 +1,6 @@
 package com.ggs.parkuzpp.ui
 
+import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -8,19 +9,26 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.ggs.parkuzpp.bluetooth.BluetoothController
 import com.ggs.parkuzpp.bluetooth.BluetoothRepository
 import com.ggs.parkuzpp.bluetooth.SavedBluetoothDevice
 
 @Composable
-fun SettingsScreen(
-    onBack: () -> Unit
-) {
+fun SettingsScreen() {
 
     val context = LocalContext.current
+
+    val activity =
+        context as Activity
 
     val repository =
         remember {
             BluetoothRepository(context)
+        }
+
+    val bluetoothController =
+        remember {
+            BluetoothController(activity)
         }
 
     val savedCars =
@@ -28,15 +36,22 @@ fun SettingsScreen(
             mutableStateListOf<SavedBluetoothDevice>()
         }
 
-    // LOAD SAVED DEVICES
+    // REFRESH FUNCTION
 
-    LaunchedEffect(Unit) {
+    fun refreshCars() {
 
         savedCars.clear()
 
         savedCars.addAll(
             repository.getSavedCars()
         )
+    }
+
+    // INITIAL LOAD
+
+    LaunchedEffect(Unit) {
+
+        refreshCars()
     }
 
     Column(
@@ -46,7 +61,7 @@ fun SettingsScreen(
     ) {
 
         Text(
-            text = "Saved Bluetooth Cars",
+            text = "Zapisane Samochody",
             style =
                 MaterialTheme.typography.titleLarge
         )
@@ -54,6 +69,31 @@ fun SettingsScreen(
         Spacer(
             modifier = Modifier.height(16.dp)
         )
+
+        // ADD CAR BUTTON
+
+        Button(
+            onClick = {
+
+                bluetoothController
+                    .openCarPicker {
+
+                        refreshCars()
+                    }
+            },
+
+            modifier =
+                Modifier.fillMaxWidth()
+        ) {
+
+            Text("Dodaj Samochód")
+        }
+
+        Spacer(
+            modifier = Modifier.height(16.dp)
+        )
+
+        // SAVED DEVICES LIST
 
         LazyColumn {
 
@@ -96,11 +136,11 @@ fun SettingsScreen(
                                     device.address
                                 )
 
-                                savedCars.remove(device)
+                                refreshCars()
                             }
                         ) {
 
-                            Text("Delete")
+                            Text("Usuń")
                         }
                     }
                 }
@@ -111,19 +151,21 @@ fun SettingsScreen(
             modifier = Modifier.height(24.dp)
         )
 
+        // DELETE ALL
+
         Button(
             onClick = {
 
                 repository.clearCars()
 
-                savedCars.clear()
+                refreshCars()
             },
 
             modifier =
                 Modifier.fillMaxWidth()
         ) {
 
-            Text("Delete All Cars")
+            Text("Usuń wszystkie samochody")
         }
     }
 }
