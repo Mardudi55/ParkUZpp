@@ -82,5 +82,9 @@
     <string name="saving">Zapisywanie…</string>
     <string name="captured_photo_desc">Zrobione zdjęcie parkingowe</string>
     <string name="menu_settings">Ustawienia</string>
+    <string name="delete_all_cars">Usuń wszystkie samochody</string>
+    <string name="delete_car">Usuń</string>
+    <string name="add_car">Dodaj samochód</string>
+    <string name="saved_car">Zapisane samochody</string>
 
 </resources>

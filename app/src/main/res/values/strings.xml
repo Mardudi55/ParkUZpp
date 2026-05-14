@@ -84,4 +84,8 @@
     <string name="saving">Saving…</string>
     <string name="captured_photo_desc">Captured parking photo</string>
     <string name="menu_settings">Settings</string>
+    <string name="delete_all_cars">Delete all cars</string>
+    <string name="delete_car">Delete</string>
+    <string name="add_car">Add car</string>
+    <string name="saved_car">Saved cars</string>
 </resources>
