@@ -254,9 +254,7 @@ fun MainScreen(
                     )
                 }
                 composable("settings") {
-                    SettingsScreen(
-                        onBack = { bottomNavController.popBackStack() }
-                    )
+                    SettingsScreen()
                 }
 
             }

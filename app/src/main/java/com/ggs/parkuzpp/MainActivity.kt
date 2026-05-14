@@ -36,8 +36,6 @@ class MainActivity : ComponentActivity() {
         bluetoothController =
             BluetoothController(this)
 
-        bluetoothController.start()
-
         setContent {
             val context = LocalContext.current
             val prefs = remember { getSharedPreferences(PREFS_NAME, MODE_PRIVATE) }
